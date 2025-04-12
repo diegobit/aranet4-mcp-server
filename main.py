@@ -71,6 +71,17 @@ async def get_database_stats() -> str:
     return aranet4_db.get_database_stats()
 
 @mcp.tool()
+async def fetch_new_data() -> str:
+    """
+    Fetch the data stored in the embedded Aranet4 device memory, store in the local database, and return it (markdown formatted).
+
+    Args:
+        num_retries: Number of retry attempts if fetching fails. Default = 3
+    """
+    new_data = aranet4_db.fetch_new_data()
+    return new_data
+
+@mcp.tool()
 async def get_recent_data(limit: int = 20, sensor: str = "all", output_plot: bool = False) -> str:
     """
     Get most recent sensor data from the Aranet4 local database. Defaults to return data in markdown format; set output_plot=true if the user asks for a plot.

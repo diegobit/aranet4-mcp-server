@@ -5,6 +5,7 @@ from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import yaml
+import aranet4
 import matplotlib.pyplot as plt
 import pandas as pd
 import tzlocal
@@ -37,6 +38,7 @@ class Aranet4DB:
                 self.local_timezone = tzlocal.get_localzone_name()
             except Exception:
                 pass
+
         self._init_database()
 
     def _init_database(self):
@@ -157,6 +159,82 @@ class Aranet4DB:
         except Exception as e:
             return f"Error retrieving database statistics: {str(e)}"
 
+    def fetch_new_data(self, num_retries: int = 3):
+        """
+        Fetch the data stored in the embedded Aranet4 device memory, store in the local database, and return it.
+
+        Args:
+            num_retries: Number of retry attempts if fetching fails. Default = 3
+        """
+        entry_filter = {}
+
+        con = sqlite3.connect(self.db_path)
+        cur = con.cursor()
+
+        res = cur.execute(
+            """
+            SELECT timestamp
+            FROM measurements
+            WHERE device = ?
+            ORDER BY timestamp DESC
+            LIMIT 1
+            """,
+            (self.device_name,),
+        )
+        row = res.fetchone()
+        if row is not None:
+            entry_filter["start"] = datetime.fromtimestamp(row[0], tz=timezone.utc).astimezone(
+                ZoneInfo(self.local_timezone)
+            )
+
+        range_start = entry_filter.get('start', 'beginning').isoformat() if 'start' in entry_filter else 'beginning'
+        range_end = entry_filter['end'].isoformat()
+
+        history = None
+        errors = []
+        for _ in range(num_retries):
+            entry_filter["end"] = datetime.now(timezone.utc).astimezone(ZoneInfo(self.local_timezone))
+            try:
+                history = aranet4.client.get_all_records(self.device_mac, entry_filter)
+                break
+            except Exception as e:
+                errors.append(str(e))
+                continue
+        if history is None:
+            con.close()
+            return f"""Failed to fetch measurements from '{self.device_name}' with mac '{self.device_mac} in range: ({range_start}, {range_end})
+
+            # Errors
+            {"\n\n".join(errors)}
+            """
+
+        data = []
+        for entry in history.value:
+            if entry.co2 < 0:
+                continue
+
+            data.append((
+                self.device_name,
+                entry.date.timestamp(),
+                entry.temperature,
+                entry.humidity,
+                entry.pressure,
+                entry.co2
+            ))
+
+        cur.executemany(
+            'INSERT OR IGNORE INTO measurements VALUES(?, ?, ?, ?, ?, ?)', data
+        )
+        con.commit()
+        con.close()
+        return f"""
+            Fetched {len(data)} measurements in range: ({range_start}, {range_end}) and added to local sqlite db.
+
+            # Fetched data
+            {self._format_data_as_markdown(data)}
+            """.strip()
+
+
     def get_recent_data(self, limit=20, sensor="all", format="markdown") -> (tuple | str | None):
         """
         Retrieve recent data from the database. Gets textual output as default.
@@ -174,7 +252,7 @@ class Aranet4DB:
             # Calculate date range
             end_time = datetime.now(timezone.utc)
 
-            # Determine columns to fetch
+            # Determine columns to select
             if sensor == "all":
                 columns = "timestamp, temperature, humidity, pressure, CO2"
             else:
