@@ -142,31 +142,6 @@ async def get_data_by_timerange(
         return f"Error retrieving data: {str(e)}"
 
 
-@mcp.tool()
-async def generate_plot(sensors: str = "CO2", start_date: str = "", end_date: str = "", days: int = 3) -> str:
-    """
-    Generate a plot of sensor data within a date range or most recent days. Returns the local path of the image.
-
-    Args:
-        sensors: Comma-separated list of sensors to plot (temperature, humidity, pressure, CO2)
-        start_date: Start date (YYYY-MM-DD) - overrides days parameter
-        end_date: End date (YYYY-MM-DD) - defaults to current date
-        days: Number of days to plot if start_date not provided (default: 3)
-    """
-    try:
-        # Call the database method to generate the plot
-        result = aranet4_db.generate_plot(sensors, start_date, end_date, days)
-
-        # If result is a filepath, add a success message
-        if not result.startswith("Error"):
-            return f"Plot saved to: {result}"
-
-        # Otherwise, return the error message
-        return result
-    except Exception as e:
-        return f"Error generating plot: {str(e)}"
-
-
 if __name__ == "__main__":
     print("Starting Aranet4 MCP Server...")
     mcp.run()
