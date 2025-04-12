@@ -10,21 +10,19 @@ MCP server to manage your Aranet4 CO2 sensor.
 
 ## Installation
 
-1. Clone repo
+1. Clone repo:
 
     ```
     git clone git@github.com:diegobit/aranet4-mcp-server.git`
     cd aranet4-mcp-server
     ```
 
-2. Configure by editing file `config.yaml`. You need to provide the mac address and the device name. You can get the mac address with `aranetctl --scan` from [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) (installed with this repo dependencies).
-
-3. Prepare environment:
+2. Prepare environment:
 
     - **Recommended (with [uv](https://docs.astral.sh/uv/))**: Nothing to do. The provided `pyproject.toml` handles dependencied and virtual environments.
     - **Alternative (with pip)**: install with `pip install .`
 
-4. Add to MCP client:
+3. Add to MCP client configuration:
 
     ```
     "aranet4": {
@@ -40,4 +38,9 @@ MCP server to manage your Aranet4 CO2 sensor.
 
     - Claude Desktop MacOS config file path: `~/Library/Application Support/Claude/claude_desktop_config.json`
     - Cursor MacOS config file path: `~/.cursor/mcp.json`
+
+2. Configure:
+
+    - **Recommended (AI assisted config!):** start your client and ask `init aranet4` to get a guided configuration.
+    - **Alternative (manual):** edit file `config.yaml`. You need to provide the mac address and the device name. You can get the mac address with `aranetctl --scan` from [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) (installed with this repo dependencies).
 
