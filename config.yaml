@@ -1,5 +1,5 @@
----
 db_path: "~/Documents/aranet4.db"
 device_name: "XXX"
 device_mac: "XXX"
+db_path: ~/Documents/aranet4.db
 use_local_tz: true
