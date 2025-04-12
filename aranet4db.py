@@ -4,6 +4,7 @@ import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
+import yaml
 import matplotlib.pyplot as plt
 import pandas as pd
 import tzlocal
@@ -19,13 +20,23 @@ class Aranet4DB:
             "pressure": {"color": "green", "unit": "hPa"},
             "CO2": {"color": "purple", "unit": "ppm"},
         }
-        try:
-            self.local_timezone = tzlocal.get_localzone_name()
-        except Exception:
-            self.local_timezone = "UTC"
-        self.device_name = os.getenv("DEVICE_NAME")
 
-        self.db_path = os.path.expanduser(os.getenv("DB_PATH", "~/Documents/aranet4.db"))
+        with open("config.yaml", "r") as f:
+            config = yaml.load(f, Loader=yaml.SafeLoader)
+
+        self.device_name = config["device_name"]
+        self.device_mac = config["device_mac"]
+        self.db_path = os.path.expanduser(config["db_path"])
+        self.use_local_tz = config["use_local_tz"]
+        if not self.device_name or not self.device_mac or not self.db_path:
+            raise Exception("MCP server not configured. Edit config.yaml")
+
+        self.local_timezone = "UTC"
+        if self.use_local_tz:
+            try:
+                self.local_timezone = tzlocal.get_localzone_name()
+            except Exception:
+                pass
         self._init_database()
 
     def _init_database(self):

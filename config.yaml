@@ -1,0 +1,5 @@
+---
+db_path: "~/Documents/aranet4.db"
+device_name: "camera"
+device_mac: "11A2FFE6-EC4D-D53D-9695-EA19DCE33F63"
+use_local_tz: true

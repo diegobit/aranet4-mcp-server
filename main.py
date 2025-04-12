@@ -1,13 +1,11 @@
 import asyncio
 
 import aranet4
-from dotenv import load_dotenv
 from mcp.server.fastmcp import FastMCP
 
 from aranet4db import Aranet4DB
 
 
-load_dotenv()
 mcp = FastMCP("aranet4")
 aranet4_db = Aranet4DB()
 
