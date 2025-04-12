@@ -1,5 +1,6 @@
 import asyncio
 
+import yaml
 import aranet4
 from mcp.server.fastmcp import FastMCP
 
@@ -7,8 +8,16 @@ from aranet import Aranet4DB
 
 
 mcp = FastMCP("aranet4")
-aranet4_db = Aranet4DB()
 
+with open("config.yaml", "r") as f:
+    config = yaml.load(f, Loader=yaml.SafeLoader)
+
+aranet4_db = Aranet4DB(
+    device_name=config["device_name"],
+    device_mac=config["device_mac"],
+    db_path=os.path.expanduser(config["db_path"]),
+    use_local_tz=config["use_local_tz"]
+)
 
 @mcp.tool()
 async def scan_devices() -> str:
