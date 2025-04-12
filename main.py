@@ -59,6 +59,18 @@ async def scan_devices() -> str:
     except Exception as e:
         return f"Error scanning for devices: {str(e)}"
 
+@mcp.tool()
+async def get_database_stats() -> str:
+    """
+    Get statistics about the Aranet4 sqlite database, including:
+    - List of devices
+    - Total number of measurements
+    - Time range (first to last measurement dates)
+
+    Returns:
+        A markdown-formatted summary of database statistics
+    """
+    return aranet4_db.get_database_stats()
 
 @mcp.tool()
 async def get_recent_data(limit: int = 20, sensor: str = "all", output_plot: bool = False) -> str:

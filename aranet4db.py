@@ -1,7 +1,7 @@
 import os
 import sqlite3
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
 
 import matplotlib.pyplot as plt
@@ -79,6 +79,72 @@ class Aranet4DB:
     def get_valid_sensors(self):
         """Return a list of valid sensor types."""
         return list(self.sensor_plot_config.keys())
+
+    def get_database_stats(self) -> str:
+        """
+        Get statistics about the Aranet4 database, including:
+        - List of devices
+        - Total number of measurements
+        - Time range (first to last measurement dates)
+
+        Returns:
+            A markdown-formatted summary of database statistics
+        """
+        try:
+            con = sqlite3.connect(self.db_path)
+            cur = con.cursor()
+
+            # Get list of unique devices
+            devices = cur.execute("SELECT DISTINCT device FROM measurements").fetchall()
+            device_list = [device[0] for device in devices]
+
+            # Get total measurement count
+            count = cur.execute("SELECT COUNT(*) FROM measurements").fetchone()[0]
+
+            # Get first and last measurement timestamps
+            first_ts = cur.execute("SELECT MIN(timestamp) FROM measurements").fetchone()[0]
+            last_ts = cur.execute("SELECT MAX(timestamp) FROM measurements").fetchone()[0]
+
+            # Get count per device
+            device_counts = {}
+            for device in device_list:
+                device_count = cur.execute("SELECT COUNT(*) FROM measurements WHERE device = ?", 
+                                         (device,)).fetchone()[0]
+                device_counts[device] = device_count
+
+            con.close()
+
+            # Format timestamps as readable dates in local timezone
+            if first_ts and last_ts:
+                first_dt = datetime.fromtimestamp(first_ts, tz=timezone.utc)
+                last_dt = datetime.fromtimestamp(last_ts, tz=timezone.utc)
+
+                first_local = first_dt.astimezone(ZoneInfo(self.local_timezone))
+                last_local = last_dt.astimezone(ZoneInfo(self.local_timezone))
+
+                first_str = first_local.strftime('%Y-%m-%d %H:%M:%S %z')
+                last_str = last_local.strftime('%Y-%m-%d %H:%M:%S %z')
+            else:
+                first_str = "N/A"
+                last_str = "N/A"
+
+            # Build markdown output
+            result = [
+                "## Aranet4 Database Statistics",
+                "",
+                f"**Total Measurements**: {count}",
+                "",
+                f"**Time Range**: {first_str} to {last_str}",
+                "",
+                "**Devices**:"
+            ]
+
+            for device, device_count in device_counts.items():
+                result.append(f"- {device}: {device_count} measurements")
+
+            return "\n".join(result)
+        except Exception as e:
+            return f"Error retrieving database statistics: {str(e)}"
 
     def get_recent_data(self, limit=20, sensor="all", format="markdown") -> (tuple | str | None):
         """
