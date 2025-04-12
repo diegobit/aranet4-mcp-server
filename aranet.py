@@ -43,28 +43,28 @@ class Aranet4DB:
 
     def _init_database(self):
         """Initialize the database if it doesn't exist."""
-        con = sqlite3.connect(self.db_path)
-        cur = con.cursor()
-        cur.execute("""
-            CREATE TABLE IF NOT EXISTS measurements(
-                device TEXT,
-                timestamp INTEGER,
-                temperature REAL,
-                humidity INTEGER,
-                pressure REAL,
-                CO2 INTEGER,
-                PRIMARY KEY(device, timestamp)
-            )
-        """)
-        con.commit()
-        con.close()
+        with sqlite3.connect(self.db_path) as con:
+            cur = con.cursor()
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS measurements(
+                    device TEXT,
+                    timestamp INTEGER,
+                    temperature REAL,
+                    humidity INTEGER,
+                    pressure REAL,
+                    CO2 INTEGER,
+                    PRIMARY KEY(device, timestamp)
+                )
+            """)
+            con.commit()
 
-    def _format_data_as_markdown(self, column_data):
+    def _format_data_as_markdown(self, column_data, timestamp_idx):
         """
         Format database query results as markdown table.
 
         Args:
             column_data: Tuple of (column_names, rows)
+            timestamp_idx: index inside both column_names and rows of the timestamp
 
         Returns:
             Markdown formatted table as string
@@ -82,9 +82,9 @@ class Aranet4DB:
         for row in rows:
             formatted_row = list(row)
             # Convert timestamp to local time
-            dt = datetime.fromtimestamp(row[0], tz=timezone.utc)
+            dt = datetime.fromtimestamp(row[timestamp_idx], tz=timezone.utc)
             local_dt = dt.astimezone(ZoneInfo(self.local_timezone))
-            formatted_row[0] = local_dt.strftime('%Y-%m-%d %H:%M:%S %z')
+            formatted_row[timestamp_idx] = local_dt.strftime('%Y-%m-%d %H:%M:%S %z')
             result.append(" | ".join(str(value) for value in formatted_row))
 
         return "\n".join(result)
@@ -104,28 +104,28 @@ class Aranet4DB:
             A markdown-formatted summary of database statistics
         """
         try:
-            con = sqlite3.connect(self.db_path)
-            cur = con.cursor()
+            with sqlite3.connect(self.db_path) as con:
+                cur = con.cursor()
 
-            # Get list of unique devices
-            devices = cur.execute("SELECT DISTINCT device FROM measurements").fetchall()
-            device_list = [device[0] for device in devices]
+                # Get list of unique devices
+                devices = cur.execute("SELECT DISTINCT device FROM measurements").fetchall()
+                device_list = [device[0] for device in devices]
 
-            # Get total measurement count
-            count = cur.execute("SELECT COUNT(*) FROM measurements").fetchone()[0]
+                # Get total measurement count
+                count = cur.execute("SELECT COUNT(*) FROM measurements").fetchone()[0]
 
-            # Get first and last measurement timestamps
-            first_ts = cur.execute("SELECT MIN(timestamp) FROM measurements").fetchone()[0]
-            last_ts = cur.execute("SELECT MAX(timestamp) FROM measurements").fetchone()[0]
+                # Get first and last measurement timestamps
+                first_ts = cur.execute("SELECT MIN(timestamp) FROM measurements").fetchone()[0]
+                last_ts = cur.execute("SELECT MAX(timestamp) FROM measurements").fetchone()[0]
 
-            # Get count per device
-            device_counts = {}
-            for device in device_list:
-                device_count = cur.execute("SELECT COUNT(*) FROM measurements WHERE device = ?", 
-                                         (device,)).fetchone()[0]
-                device_counts[device] = device_count
-
-            con.close()
+                # Get count per device
+                device_counts = {}
+                for device in device_list:
+                    device_count = cur.execute(
+                        "SELECT COUNT(*) FROM measurements WHERE device = ?",
+                        (device,)
+                    ).fetchone()[0]
+                    device_counts[device] = device_count
 
             # Format timestamps as readable dates in local timezone
             if first_ts and last_ts:
@@ -159,35 +159,46 @@ class Aranet4DB:
         except Exception as e:
             return f"Error retrieving database statistics: {str(e)}"
 
-    def fetch_new_data(self, num_retries: int = 3):
+    def get_last_timestamp(self, device_name: str) -> (datetime | None):
+        """Get the timestamp of the last recorded measurement for a specific device."""
+        try:
+           with sqlite3.connect(self.db_path) as con:
+                cur = con.cursor()
+                res = cur.execute(
+                    """
+                    SELECT MAX(timestamp)
+                    FROM measurements
+                    WHERE device = ?
+                    """,
+                    (device_name,),
+                )
+                row = res.fetchone()
+                if row and row[0] is not None:
+                    # Return as timezone-aware datetime object in local timezone
+                    ts_utc = datetime.fromtimestamp(row[0], tz=timezone.utc)
+                    return ts_utc.astimezone(ZoneInfo(self.local_timezone))
+                return None
+        except Exception as e:
+            print(f"Error getting last timestamp for {device_name}: {e}")
+            return None
+
+    async def fetch_new_data(self, num_retries: int = 3) -> str:
         """
         Fetch the data stored in the embedded Aranet4 device memory, store in the local database, and return it.
 
         Args:
             num_retries: Number of retry attempts if fetching fails. Default = 3
         """
-        entry_filter = {}
+        entry_filter = {
+            "end": datetime.now(timezone.utc).astimezone(ZoneInfo(self.local_timezone))
+        }
 
-        con = sqlite3.connect(self.db_path)
-        cur = con.cursor()
-
-        res = cur.execute(
-            """
-            SELECT timestamp
-            FROM measurements
-            WHERE device = ?
-            ORDER BY timestamp DESC
-            LIMIT 1
-            """,
-            (self.device_name,),
-        )
-        row = res.fetchone()
-        if row is not None:
-            entry_filter["start"] = datetime.fromtimestamp(row[0], tz=timezone.utc).astimezone(
-                ZoneInfo(self.local_timezone)
-            )
-
-        range_start = entry_filter.get('start', 'beginning').isoformat() if 'start' in entry_filter else 'beginning'
+        last_timestamp = self.get_last_timestamp(self.device_name)
+        if last_timestamp:
+            entry_filter['start'] = last_timestamp
+            range_start = entry_filter['start'].isoformat()
+        else:
+            range_start = "beginning"
         range_end = entry_filter['end'].isoformat()
 
         history = None
@@ -195,20 +206,21 @@ class Aranet4DB:
         for _ in range(num_retries):
             entry_filter["end"] = datetime.now(timezone.utc).astimezone(ZoneInfo(self.local_timezone))
             try:
-                history = aranet4.client.get_all_records(self.device_mac, entry_filter)
+                history = await aranet4.client._all_records(self.device_mac, entry_filter, False)
                 break
             except Exception as e:
                 errors.append(str(e))
                 continue
         if history is None:
-            con.close()
-            return f"""Failed to fetch measurements from '{self.device_name}' with mac '{self.device_mac} in range: ({range_start}, {range_end})
-
-            # Errors
-            {"\n\n".join(errors)}
-            """
+            return (
+                f"Failed to fetch measurements from '{self.device_name}' with mac '{self.device_mac} in range: ({range_start}, {range_end})\n"
+                f"\n"
+                f"# Errors\n"
+                f"{'\n\n'.join(errors)}"
+            )
 
         data = []
+        columns = ["device", "timestamp", "temperature", "humidity", "pressure", "co2"]
         for entry in history.value:
             if entry.co2 < 0:
                 continue
@@ -221,18 +233,21 @@ class Aranet4DB:
                 entry.pressure,
                 entry.co2
             ))
+        column_data = (columns, data)
 
-        cur.executemany(
-            'INSERT OR IGNORE INTO measurements VALUES(?, ?, ?, ?, ?, ?)', data
+        with sqlite3.connect(self.db_path) as con:
+            cur = con.cursor()
+            cur.executemany(
+                'INSERT OR IGNORE INTO measurements VALUES(?, ?, ?, ?, ?, ?)', data
+            )
+            con.commit()
+
+        return (
+            f"Fetched {len(data)} measurements in range: ({range_start}, {range_end}) and added to local sqlite db.\n"
+            f"\n"
+            f"# Fetched data\n"
+            f"{self._format_data_as_markdown(column_data, timestamp_idx=1)}\n"
         )
-        con.commit()
-        con.close()
-        return f"""
-            Fetched {len(data)} measurements in range: ({range_start}, {range_end}) and added to local sqlite db.
-
-            # Fetched data
-            {self._format_data_as_markdown(data)}
-            """.strip()
 
 
     def get_recent_data(self, limit=20, sensor="all", format="markdown") -> (tuple | str | None):
@@ -259,28 +274,27 @@ class Aranet4DB:
                 columns = f"timestamp, {sensor}"
 
             # Connect and query
-            con = sqlite3.connect(self.db_path)
-            cur = con.cursor()
+            with sqlite3.connect(self.db_path) as con:
+                cur = con.cursor()
 
-            query = f"""
-                SELECT {columns}
-                FROM measurements
-                WHERE timestamp <= ?
-                ORDER BY timestamp DESC
-                LIMIT ?
-                """
-            params = [int(end_time.timestamp()), limit]
+                query = f"""
+                    SELECT {columns}
+                    FROM measurements
+                    WHERE timestamp <= ?
+                    ORDER BY timestamp DESC
+                    LIMIT ?
+                    """
+                params = [int(end_time.timestamp()), limit]
 
-            rows = cur.execute(query, params).fetchall()
-            con.close()
+                rows = cur.execute(query, params).fetchall()
 
             if not rows:
                 return None
 
-            column_data = columns.split(", "), rows
+            column_data = (columns.split(", "), rows)
 
             if format == "markdown":
-                return self._format_data_as_markdown(column_data)
+                return self._format_data_as_markdown(column_data, timestamp_idx=0)
             elif format.startswith("plot"):
                 return self._generate_plot(column_data, format)
 
@@ -326,19 +340,18 @@ class Aranet4DB:
                 columns = f"timestamp, {sensor}"
 
             # Connect and query
-            con = sqlite3.connect(self.db_path)
-            cur = con.cursor()
+            with sqlite3.connect(self.db_path) as con:
+                cur = con.cursor()
 
-            query = f"""
-                SELECT {columns}
-                FROM measurements
-                WHERE timestamp >= ? AND timestamp <= ?
-                ORDER BY timestamp
-                """
-            params = [int(start_time_utc.timestamp()), int(end_time_utc.timestamp())]
+                query = f"""
+                    SELECT {columns}
+                    FROM measurements
+                    WHERE timestamp >= ? AND timestamp <= ?
+                    ORDER BY timestamp
+                    """
+                params = [int(start_time_utc.timestamp()), int(end_time_utc.timestamp())]
 
-            rows = cur.execute(query, params).fetchall()
-            con.close()
+                rows = cur.execute(query, params).fetchall()
 
             if not rows:
                 return None
@@ -347,10 +360,10 @@ class Aranet4DB:
             while len(rows) > limit:
                 rows = rows[::2]
 
-            column_data = columns.split(", "), rows
+            column_data = (columns.split(", "), rows)
 
             if format == "markdown":
-                return self._format_data_as_markdown(column_data)
+                return self._format_data_as_markdown(column_data, timestamp_idx=0)
             elif format.startswith("plot"):
                 return self._generate_plot(column_data, format)
             return column_data
@@ -440,9 +453,16 @@ class Aranet4DB:
 
 if __name__ == "__main__":
     aranet = Aranet4DB()
-    print(aranet.get_data_by_timerange(
-        sensor='CO2',
-        end_time= '2025-04-06T23:59:59',
-        start_time= '2025-04-06T00:00:00',
-        format="plot_base64"
-    ))
+    
+    async def f():
+        return await aranet.fetch_new_data()
+
+    import asyncio
+    print(asyncio.run(f()))
+
+    # print(aranet.get_data_by_timerange(
+    #     sensor='CO2',
+    #     end_time= '2025-04-06T23:59:59',
+    #     start_time= '2025-04-06T00:00:00',
+    #     format="plot_base64"
+    # ))

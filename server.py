@@ -3,7 +3,7 @@ import asyncio
 import aranet4
 from mcp.server.fastmcp import FastMCP
 
-from aranet4db import Aranet4DB
+from aranet import Aranet4DB
 
 
 mcp = FastMCP("aranet4")
@@ -78,23 +78,22 @@ async def fetch_new_data() -> str:
     Args:
         num_retries: Number of retry attempts if fetching fails. Default = 3
     """
-    new_data = aranet4_db.fetch_new_data()
-    return new_data
+    return await aranet4_db.fetch_new_data()
 
 @mcp.tool()
-async def get_recent_data(limit: int = 20, sensor: str = "all", output_plot: bool = False) -> str:
+async def get_recent_data(limit: int = 20, sensors: str = "all", output_plot: bool = False) -> str:
     """
     Get most recent sensor data from the Aranet4 local database. Defaults to return data in markdown format; set output_plot=true if the user asks for a plot.
 
     Args:
         limit: number of measurements to get (default: 20)
-        sensor: Sensor to retrieve (temperature, humidity, pressure, CO2, or "all")
+        sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         output_plot: whether to get data as a base64 image of the plot (true) or markdown text (false)
     """
     valid_sensors = aranet4_db.get_valid_sensors()
 
-    if sensor != "all" and sensor not in valid_sensors:
-        return f"Invalid sensor type. Valid options are: {', '.join(valid_sensors)} or 'all'"
+    if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
+        return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
 
     if output_plot:
         format = "plot_base64"
@@ -102,7 +101,7 @@ async def get_recent_data(limit: int = 20, sensor: str = "all", output_plot: boo
         format = "markdown"
 
     try:
-        data = aranet4_db.get_recent_data(limit, sensor, format=format)
+        data = aranet4_db.get_recent_data(limit, sensors, format=format)
         if not data:
             return "No data found"
         if not isinstance(data, str):
@@ -116,24 +115,26 @@ async def get_recent_data(limit: int = 20, sensor: str = "all", output_plot: boo
 async def get_data_by_timerange(
     start_datetime: str,
     end_datetime: str,
-    sensor: str = "all",
+    sensors: str = "all",
     limit: int = 100,
     output_plot: bool = False
 ) -> str:
     """
-    Get sensor data within a specific time range. Defaults to return data in markdown format; Set output_plot=true if the user asks for a plot. Increase the limit only if the timerange is big.
+    Get sensor data within a specific time range.
+    - If the range is wide and there are too many measurements, these are dropped until below limit. Use a bigger limit if the timerange is big.
+    - Defaults to returning data in markdown format; Set output_plot = "true" if the user asks for a plot.
 
     Args:
         start_datetime: Start datetime in ISO format (YYYY-MM-DDTHH:MM:SS)
         end_datetime: End datetime in ISO format (YYYY-MM-DDTHH:MM:SS)
-        sensor: Sensor to retrieve (temperature, humidity, pressure, CO2, or "all")
-        limit: limit number of results. If above, makes it sparser. Set to a high number to (sort of) disable
+        sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
+        limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
         output_plot: whether to get data as a base64 image of the plot (true) or markdown text (false)
     """
     valid_sensors = aranet4_db.get_valid_sensors()
 
-    if sensor != "all" and sensor not in valid_sensors:
-        return f"Invalid sensor type. Valid options are: {', '.join(valid_sensors)} or 'all'"
+    if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
+        return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
 
     if output_plot:
         format = "plot_base64"
@@ -141,7 +142,7 @@ async def get_data_by_timerange(
         format = "markdown"
 
     try:
-        data = aranet4_db.get_data_by_timerange(start_datetime, end_datetime, sensor, limit, format=format)
+        data = aranet4_db.get_data_by_timerange(start_datetime, end_datetime, sensors, limit, format=format)
         if not data:
             return f"No data found between {start_datetime} and {end_datetime}"
         if not isinstance(data, str):
