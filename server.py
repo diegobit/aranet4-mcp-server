@@ -23,6 +23,35 @@ aranet4_db = Aranet4DB(
 )
 
 @mcp.tool()
+async def init_aranet4_config() -> str:
+    """
+    Initialize the Aranet4 MCP Server configuration. This tool helps setup the db_path,
+    device_name, device_mac and use_local_tz settings.
+
+    Returns descriptive information that guides the user through the configuration process.
+    """
+    return """
+    To initialize the Aranet4 MCP Server configuration, please follow these steps:
+
+    1. First, scan for nearby devices using the `scan_devices` tool.
+    2. Check your current configuration with `get_configuration` (with no arguments).
+    3. Update the configuration with `set_configuration` tool by setting the new values. Always prompt the user before setting values.
+    4. Suggest to the user what he/her might do after the configuration (just report the examples below):
+        a. "Fetch new data from my aranet4" (This will update the local db with the data stored in the device).
+        b. "Show recent measurements from my aranet4".
+        c. "How was the CO2 last sunday around noon?".
+        d. "Plot the CO2 of the last two weeks."
+
+    The configuration consists of:
+    - db_path: path to the local sqlite3 database
+    - device_name: a memorable name for your Aranet4 device
+    - device_mac: the MAC address of your Aranet4 CO2 sensor
+    - use_local_tz: whether to use local timezone when plotting
+
+    Use `scan_devices` now to begin the process.
+    """
+
+@mcp.tool()
 async def scan_devices() -> str:
     """
     Scan for nearby Aranet4 devices and return their information.
