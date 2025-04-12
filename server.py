@@ -1,4 +1,7 @@
 import asyncio
+import os
+from datetime import datetime
+import json
 
 import yaml
 import aranet4
@@ -65,6 +68,61 @@ async def scan_devices() -> str:
         return "\n\n".join(result)
     except Exception as e:
         return f"Error scanning for devices: {str(e)}"
+
+@mcp.tool()
+async def get_configuration() -> str:
+    """
+    Get current config.
+
+    Returns:
+        str: current configuration object.
+    """
+    return (
+        "Current config:\n"
+        f"{json.dumps(config, indent=4)}"
+    )
+
+@mcp.tool()
+async def set_configuration(db_path=None, device_name=None, device_mac=None, use_local_tz=None) -> str:
+    """
+    Change configuration of database or currently tracked device.
+
+    Args:
+        db_path: path to db where to store past measurements.
+        device_name: name of the device, used as a first column in db.
+        device_mac: MAC address of aranet4 sensor. Used for fetching with bluetooth.
+        use_local_tz: if to use local timezone when plotting.
+
+    Returns:
+        str: new configuration object.
+    """
+    if db_path is None and device_name is None and device_mac is None and use_local_tz is None:
+        return "Need to provide at least one argument."
+
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    backup_filename = f"config_{timestamp}.yaml"
+    with open(backup_filename, 'w') as f:
+        yaml.dump(config, f, default_flow_style=False)
+
+    if db_path is not None:
+        config['db_path'] = db_path
+    if device_name is not None:
+        config['device_name'] = device_name
+    if device_mac is not None:
+        config['device_mac'] = device_mac
+    if use_local_tz is not None:
+        config['use_local_tz'] = use_local_tz
+
+    with open("config.yaml", 'w') as f:
+        yaml.dump(config, f, default_flow_style=False)
+
+    return (
+        "Config Updated successfully.\n"
+        "\n"
+        "# New config:\n"
+        f"{json.dumps(config, indent=4)}"
+    )
+
 
 @mcp.tool()
 async def get_database_stats() -> str:
