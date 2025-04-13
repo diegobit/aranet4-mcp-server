@@ -6,6 +6,7 @@ MCP server to manage your Aranet4 CO2 sensor.
 - scan for nearby devices
 - fetch new data from embedded device memory and save to a local sqlite db for tracking and later viewing.
 - Ask questions about recent measurements or about a specific past date.
+- Assisted configuration! After installation, just ask "init aranet4" to set up your device in the mcp server.
 - *[For MCP clients that support images]* Ask data to be plotted to also have a nice visualization!
 
 ## Installation
