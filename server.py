@@ -258,3 +258,4 @@ async def get_data_by_timerange(
 if __name__ == "__main__":
     print("Starting Aranet4 MCP Server...")
     mcp.run()
+

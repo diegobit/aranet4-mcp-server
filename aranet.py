@@ -460,17 +460,16 @@ class Aranet4DB:
 
 
 if __name__ == "__main__":
-    aranet = Aranet4DB()
-    
-    async def f():
-        return await aranet.fetch_new_data()
+    # Quick tests
+
+    aranet4_db = Aranet4DB(
+        device_name="camera",
+        device_mac="11A2FFE6-EC4D-D53D-9695-EA19DCE33F63",
+        db_path="/Users/diego/Documents/aranet4.db",
+        use_local_tz=True
+    )
 
     import asyncio
-    print(asyncio.run(f()))
+    print(asyncio.run(aranet4_db.fetch_new_data()))
 
-    # print(aranet.get_data_by_timerange(
-    #     sensor='CO2',
-    #     end_time= '2025-04-06T23:59:59',
-    #     start_time= '2025-04-06T00:00:00',
-    #     format="plot_base64"
-    # ))
+    print(aranet4_db.get_recent_data(format="plot"))
