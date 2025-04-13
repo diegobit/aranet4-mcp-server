@@ -5,7 +5,6 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
 > [!TIP]
 > For the standalone python version without MCP logic, see [aranet4-archiver](https://github.com/diegobit/aranet4-archiver?tab=readme-ov-file).
 
-
 ## Features:
 - Scan for nearby devices.
 - Fetch new data from embedded device memory and save to a local sqlite db for tracking and later viewing.
@@ -48,6 +47,24 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
 
     - **Recommended (AI assisted config!):** start your client and ask `init aranet4` to get a guided configuration.
     - **Alternative (manual):** edit file `config.yaml`. You need to provide the mac address and the device name. You can get the mac address with `aranetctl --scan` from [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) (installed with this repo dependencies).
+
+## List of tools
+
+**Configuration and utils**:
+- `init_aranet4_config`: assisted configuration of device.
+- `scan_devices`: scan nearby bluetooth aranet4 devices.
+- `get_configuration`: get current config.yaml.
+- `set_configuration`: set values in config.yaml.
+- `get_database_stats`: get general stats from the local sqlite3 db.
+
+**To update historical data**:
+- `fetch_new_data`: fetch new data from configured nearby aranet4 device and save to local db.
+
+**To query historical data**:
+- `get_recent_data`: get recent data from local db. Can specify how many measurements. 
+- `get_data_by_timerange`: get data in specific timerange from local db. Can specify how many measurements (careful, if the range is big and the limit is low, datapoints will be skipped).
+
+  For both, ask to receive a plot to have it generated and displayed.
 
 ## Automatic data fetch job
 
