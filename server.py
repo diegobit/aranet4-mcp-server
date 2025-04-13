@@ -178,27 +178,23 @@ async def fetch_new_data() -> str:
     return await aranet4_db.fetch_new_data()
 
 @mcp.tool()
-async def get_recent_data(limit: int = 20, sensors: str = "all", output_plot: bool = False) -> str:
+async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot: bool = False) -> str | Image:
     """
-    Get most recent sensor data from the Aranet4 local database. Defaults to return data in markdown format; set output_plot=true if the user asks for a plot.
+    Get most recent sensor data from the Aranet4 local database. Defaults to return data in markdown format; set output_as_plot=true if the user asks for a plot (or an image).
 
     Args:
         limit: number of measurements to get (default: 20)
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
-        output_plot: whether to get data as a base64 image of the plot (true) or markdown text (false)
+        output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)
     """
     valid_sensors = aranet4_db.get_valid_sensors()
 
     if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
         return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
 
-    if output_plot:
-        format = "plot_base64"
-    else:
-        format = "markdown"
-
     try:
-        data = aranet4_db.get_recent_data(limit, sensors, format=format)
+        format = "plot" if output_as_plot else "markdown"
+        data = aranet4_db.get_recent_data(limit, sensors, format)
         if not data:
             return "No data found"
         elif not isinstance(data, str):
@@ -207,6 +203,7 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_plot: bo
             return Image(data)
         else:
             return data
+
     except Exception as e:
         return f"Error retrieving data: {str(e)}"
 
@@ -217,32 +214,33 @@ async def get_data_by_timerange(
     end_datetime: str,
     sensors: str = "all",
     limit: int = 100,
-    output_plot: bool = False
-) -> str:
+    output_as_plot: bool = False
+) -> str | Image:
     """
     Get sensor data within a specific time range.
     - If the range is wide and there are too many measurements, these are dropped until below limit. Use a bigger limit if the timerange is big.
-    - Defaults to returning data in markdown format; Set output_plot = "true" if the user asks for a plot.
+    - Defaults to returning data in markdown format; Set output_as_plot = "true" if the user asks for a plot (or an image).
 
     Args:
         start_datetime: Start datetime in ISO format (YYYY-MM-DDTHH:MM:SS)
         end_datetime: End datetime in ISO format (YYYY-MM-DDTHH:MM:SS)
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
-        output_plot: whether to get data as a base64 image of the plot (true) or markdown text (false)
+        output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)
     """
     valid_sensors = aranet4_db.get_valid_sensors()
 
     if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
         return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
 
-    if output_plot:
-        format = "plot_base64"
-    else:
-        format = "markdown"
-
     try:
-        data = aranet4_db.get_data_by_timerange(start_datetime, end_datetime, sensors, limit, format=format)
+        data = aranet4_db.get_data_by_timerange(
+            start_datetime,
+            end_datetime,
+            sensors,
+            limit,
+            format = "plot" if output_as_plot else "markdown"
+        )
         if not data:
             return f"No data found between {start_datetime} and {end_datetime}"
         elif not isinstance(data, str):
