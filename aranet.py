@@ -243,15 +243,15 @@ class Aranet4DB:
         )
 
 
-    def get_recent_data(self, limit=20, sensor="all", format="markdown") -> (tuple | str | None):
+    def get_recent_data(self, limit=20, sensors="all", format="markdown") -> (str | tuple | None):
         """
         Retrieve recent data from the database. Gets textual output as default.
         Pass format=plot_path or plot_base64 to get the data plotted
 
         Args:
             limit: number of measurements to get
-            sensor: Specific sensor or "all"
             format: output format. Default "markdown" for text. Available: "column_data": (tuple of column_names, rows); "markdown": str; "plot_base64": BASE64 encoded image; "plot_path": str path to png image.
+            sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
 
         Returns:
             Tuple of (column_names, rows) or str (if format = markdown or plot_base64 or plot_path) or None on error
@@ -261,10 +261,10 @@ class Aranet4DB:
             end_time = datetime.now(timezone.utc)
 
             # Determine columns to select
-            if sensor == "all":
+            if sensors == "all":
                 columns = "timestamp, temperature, humidity, pressure, CO2"
             else:
-                columns = f"timestamp, {sensor}"
+                columns = f"timestamp, {sensors}"
 
             # Connect and query
             with sqlite3.connect(self.db_path) as con:
@@ -296,7 +296,7 @@ class Aranet4DB:
             print(f"Database error: {str(e)}")
             return None
 
-    def get_data_by_timerange(self, start_time, end_time, sensor="all", limit=100, format="column_data") -> (tuple | str | None):
+    def get_data_by_timerange(self, start_time, end_time, sensors="all", limit=100, format="markdown") -> (str | tuple | None):
         """
         Retrieve data from the database within a specific time range. Gets textual output as default.
         Pass format=plot_path or plot_base64 to get the data plotted.
@@ -304,7 +304,7 @@ class Aranet4DB:
         Args:
             start_time: datetime with timezone, start of the range
             end_time: datetime with timezone, end of the range
-            sensor: Specific sensor or "all"
+            sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
             limit: limit number of results. If above, makes it sparser. Set to a high number to (sort of) disable
             format: output format. Default "markdown" for text. Available: "column_data": (tuple of column_names, rows); "markdown": str; "plot_base64": BASE64 encoded image; "plot_path": str path to png image.
 
@@ -327,10 +327,10 @@ class Aranet4DB:
             end_time_utc = end_time.astimezone(timezone.utc)
 
             # Determine columns to fetch
-            if sensor == "all":
+            if sensors == "all":
                 columns = "timestamp, temperature, humidity, pressure, CO2"
             else:
-                columns = f"timestamp, {sensor}"
+                columns = f"timestamp, {sensors}"
 
             # Connect and query
             with sqlite3.connect(self.db_path) as con:
