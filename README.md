@@ -9,7 +9,7 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
 
 ## Features:
 - Scan for nearby devices.
-- Fetch new data from embedded device memory and save to a local sqlite db for tracking and later viewing.
+- Fetch new data from embedded device memory and save to a local sqlite db for tracking and later viewing. For automatic updates, see at the bottom.
 - Ask questions about recent measurements or about a specific past date.
 - *[For MCP clients that support images]* Ask data to be plotted to also have a nice visualization!
 - **Assisted configuration!** 💫 After installation, just ask `init aranet4` in your client to set up everything for the mcp server to work with your device.
@@ -78,4 +78,6 @@ If you want your local db to always be updated, you can setup a cronjob or a lau
    cp com.diegobit.aranet4-fetch.plist ~/Library/LaunchAgents/
    launchctl load ~/Library/LaunchAgents/com.diegobit.aranet4-fetch.plist
    ```
+
+For other platforms, just run `fetch-job.py` periodically however you prefer.
 
