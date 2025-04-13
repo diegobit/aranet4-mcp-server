@@ -1,13 +1,13 @@
 import asyncio
+import json
 import os
 from datetime import datetime
-import json
 
-import yaml
 import aranet4
+import yaml
 from mcp.server.fastmcp import FastMCP, Image
 
-from aranet import Aranet4DB
+from aranet import Aranet4Manager
 
 
 mcp = FastMCP("aranet4")
@@ -15,12 +15,13 @@ mcp = FastMCP("aranet4")
 with open("config.yaml", "r") as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
-aranet4_db = Aranet4DB(
+aranet4_db = Aranet4Manager(
     device_name=config["device_name"],
     device_mac=config["device_mac"],
     db_path=os.path.expanduser(config["db_path"]),
     use_local_tz=config["use_local_tz"]
 )
+
 
 @mcp.tool()
 async def init_aranet4_config() -> str:
@@ -50,6 +51,7 @@ async def init_aranet4_config() -> str:
 
     Use `scan_devices` now to begin the process.
     """
+
 
 @mcp.tool()
 async def scan_devices() -> str:
@@ -98,6 +100,7 @@ async def scan_devices() -> str:
     except Exception as e:
         return f"Error scanning for devices: {str(e)}"
 
+
 @mcp.tool()
 async def get_configuration() -> str:
     """
@@ -110,6 +113,7 @@ async def get_configuration() -> str:
         "Current config:\n"
         f"{json.dumps(config, indent=4)}"
     )
+
 
 @mcp.tool()
 async def set_configuration(db_path=None, device_name=None, device_mac=None, use_local_tz=None) -> str:
@@ -166,6 +170,7 @@ async def get_database_stats() -> str:
     """
     return aranet4_db.get_database_stats()
 
+
 @mcp.tool()
 async def fetch_new_data() -> str:
     """
@@ -175,6 +180,7 @@ async def fetch_new_data() -> str:
         num_retries: Number of retry attempts if fetching fails. Default = 3
     """
     return await aranet4_db.fetch_new_data()
+
 
 @mcp.tool()
 async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot: bool = False) -> str | Image:

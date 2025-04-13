@@ -17,7 +17,7 @@ logging.basicConfig(
 )
 
 
-class Aranet4DB:
+class Aranet4Manager:
     """Handler for Aranet4 device operations."""
 
     def __init__(self, device_name, device_mac, db_path, use_local_tz):
@@ -462,7 +462,7 @@ class Aranet4DB:
 if __name__ == "__main__":
     # Quick tests
 
-    aranet4_db = Aranet4DB(
+    aranet4_db = Aranet4Manager(
         device_name="camera",
         device_mac="11A2FFE6-EC4D-D53D-9695-EA19DCE33F63",
         db_path="/Users/diego/Documents/aranet4.db",
