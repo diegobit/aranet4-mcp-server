@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.diegobit.aranet4-fetch</string>
+	<key>Nice</key>
+	<integer>10</integer>
+	<key>ProcessType</key>
+	<string>Background</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/usr/local/bin/uv</string>
+		<string>run</string>
+		<string>fetch-job.py</string>
+	</array>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>StandardErrorPath</key>
+	<string>{{USER_HOME}}/Library/Logs/aranet4-fetch.log</string>
+	<key>StandardOutPath</key>
+	<string>{{USER_HOME}}/Library/Logs/aranet4-fetch.log</string>
+	<key>StartInterval</key>
+	<integer>10800</integer>
+	<key>WorkingDirectory</key>
+	<string>{{PATH_TO_ARANET_MCP_SERVER_REPO}}</string>
+</dict>
+</plist>
