@@ -5,6 +5,8 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
 > [!TIP]
 > For the standalone python version without MCP logic, see [aranet4-archiver](https://github.com/diegobit/aranet4-archiver?tab=readme-ov-file).
 
+![Example screenshot of the Aranet4 MCP Server running](img/claude-example-1.jpg)
+
 ## Features:
 - Scan for nearby devices.
 - Fetch new data from embedded device memory and save to a local sqlite db for tracking and later viewing.
