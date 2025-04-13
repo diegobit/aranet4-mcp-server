@@ -246,15 +246,15 @@ class Aranet4DB:
     def get_recent_data(self, limit=20, sensors="all", format="markdown") -> (str | tuple | None):
         """
         Retrieve recent data from the database. Gets textual output as default.
-        Pass format=plot_path or plot_base64 to get the data plotted
+        Pass format=plot to get the data plotted as an image.
 
         Args:
             limit: number of measurements to get
-            format: output format. Default "markdown" for text. Available: "column_data": (tuple of column_names, rows); "markdown": str; "plot_base64": BASE64 encoded image; "plot_path": str path to png image.
             sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
+            format: output format. Default "markdown" for text. Available: "markdown": str; "column_data": tuple (columns, rows), "plot": filepath to png image.
 
         Returns:
-            Tuple of (column_names, rows) or str (if format = markdown or plot_base64 or plot_path) or None on error
+            str if format="markdown" or format="plot"; tuple of (column_names, rows) if format="column_data"
         """
         try:
             # Calculate date range
@@ -288,10 +288,11 @@ class Aranet4DB:
 
             if format == "markdown":
                 return self._format_data_as_markdown(column_data, timestamp_idx=0)
-            elif format.startswith("plot"):
-                return self._generate_plot(column_data, format)
+            elif format == "plot":
+                return self._generate_plot(column_data)
+            else:
+                return column_data
 
-            return column_data
         except Exception as e:
             print(f"Database error: {str(e)}")
             return None
@@ -299,17 +300,17 @@ class Aranet4DB:
     def get_data_by_timerange(self, start_time, end_time, sensors="all", limit=100, format="markdown") -> (str | tuple | None):
         """
         Retrieve data from the database within a specific time range. Gets textual output as default.
-        Pass format=plot_path or plot_base64 to get the data plotted.
+        Pass format=plot to get the data plotted as an image.
 
         Args:
             start_time: datetime with timezone, start of the range
             end_time: datetime with timezone, end of the range
             sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
             limit: limit number of results. If above, makes it sparser. Set to a high number to (sort of) disable
-            format: output format. Default "markdown" for text. Available: "column_data": (tuple of column_names, rows); "markdown": str; "plot_base64": BASE64 encoded image; "plot_path": str path to png image.
+            format: output format. Default "markdown" for text. Available: "markdown": str; "column_data": tuple (columns, rows), "plot": filepath to png image.
 
         Returns:
-            Tuple of (column_names, rows) or str (format=markdown) or None on error
+            str if format="markdown" or format="plot"; tuple of (column_names, rows) if format="column_data"
         """
         try:
             if isinstance(start_time, str):
@@ -357,20 +358,21 @@ class Aranet4DB:
 
             if format == "markdown":
                 return self._format_data_as_markdown(column_data, timestamp_idx=0)
-            elif format.startswith("plot"):
-                return self._generate_plot(column_data, format)
-            return column_data
+            elif format == "plot":
+                return self._generate_plot(column_data)
+            else:
+                return column_data
+
         except Exception as e:
             print(f"Database error: {str(e)}")
             return None
 
-    def _generate_plot(self, column_data, format):
+    def _generate_plot(self, column_data):
         """
         Generate a plot from column data.
 
         Args:
             column_data: Tuple of (column_names, rows)
-            format: "plot_path" or "plot_base64" for output format
 
         Returns:
             str: Path to saved plot or base64 encoded image
