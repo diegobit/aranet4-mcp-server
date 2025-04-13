@@ -3,7 +3,6 @@ import os
 from datetime import datetime
 import json
 
-from PIL import Image as PILImage
 import yaml
 import aranet4
 from mcp.server.fastmcp import FastMCP, Image
