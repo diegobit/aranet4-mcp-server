@@ -3,11 +3,18 @@ import sqlite3
 import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
+import logging
 
 import aranet4
 import matplotlib.pyplot as plt
 import pandas as pd
 import tzlocal
+
+logging.basicConfig(
+    format='[%(asctime)s] %(message)s',
+    level=logging.INFO,
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 
 class Aranet4DB:
@@ -175,13 +182,17 @@ class Aranet4DB:
             print(f"Error getting last timestamp for {device_name}: {e}")
             return None
 
-    async def fetch_new_data(self, num_retries: int = 3) -> str:
+    async def fetch_new_data(self, num_retries: int = 3, verbose: bool = False) -> str:
         """
         Fetch the data stored in the embedded Aranet4 device memory, store in the local database, and return it.
 
         Args:
             num_retries: Number of retry attempts if fetching fails. Default = 3
+            verbose: whether to log events. To be set for the background job
         """
+        if verbose:
+            logging.info(f"Start fetching from {self.device_name} into db at {self.db_path}")
+
         entry_filter = {
             "end": datetime.now(timezone.utc).astimezone(ZoneInfo(self.local_timezone))
         }
@@ -196,12 +207,14 @@ class Aranet4DB:
 
         history = None
         errors = []
-        for _ in range(num_retries):
+        for attempt in range(num_retries):
             entry_filter["end"] = datetime.now(timezone.utc).astimezone(ZoneInfo(self.local_timezone))
             try:
                 history = await aranet4.client._all_records(self.device_mac, entry_filter, False)
                 break
             except Exception as e:
+                if verbose:
+                    logging.warning(f"Failed attempt {attempt+1}, retrying. Error: {e}")
                 errors.append(str(e))
                 continue
         if history is None:
@@ -235,8 +248,13 @@ class Aranet4DB:
             )
             con.commit()
 
+        fetch_msg = "Fetched {len(data)} measurements in range: ({range_start}, {range_end}) and added to local sqlite db."
+
+        if verbose:
+            logging.info(fetch_msg)
+
         return (
-            f"Fetched {len(data)} measurements in range: ({range_start}, {range_end}) and added to local sqlite db.\n"
+            f"{fetch_msg}\n"
             f"\n"
             f"# Fetched data\n"
             f"{self._format_data_as_markdown(column_data, timestamp_idx=1)}\n"
