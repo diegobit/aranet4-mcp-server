@@ -248,7 +248,7 @@ class Aranet4DB:
             )
             con.commit()
 
-        fetch_msg = "Fetched {len(data)} measurements in range: ({range_start}, {range_end}) and added to local sqlite db."
+        fetch_msg = f"Fetched {len(data)} measurements in range: ({range_start}, {range_end}) and added to local sqlite db."
 
         if verbose:
             logging.info(fetch_msg)
