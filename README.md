@@ -3,11 +3,11 @@
 MCP server to manage your Aranet4 CO2 sensor.
 
 ## Features:
-- scan for nearby devices
-- fetch new data from embedded device memory and save to a local sqlite db for tracking and later viewing.
+- Scan for nearby devices.
+- Fetch new data from embedded device memory and save to a local sqlite db for tracking and later viewing.
 - Ask questions about recent measurements or about a specific past date.
-- Assisted configuration! After installation, just ask "init aranet4" to set up your device in the mcp server.
 - *[For MCP clients that support images]* Ask data to be plotted to also have a nice visualization!
+- **Assisted configuration!** 💫 After installation, just ask `init aranet4` in your client to set up everything for the mcp server to work with your device.
 
 ## Installation
 
@@ -25,7 +25,7 @@ MCP server to manage your Aranet4 CO2 sensor.
 
 3. Add to MCP client configuration:
 
-    ```
+    ```json
     "aranet4": {
       "command": "{{PATH_TO_UV}}", // run `which uv`
         "args": [
@@ -40,8 +40,19 @@ MCP server to manage your Aranet4 CO2 sensor.
     - Claude Desktop MacOS config file path: `~/Library/Application Support/Claude/claude_desktop_config.json`
     - Cursor MacOS config file path: `~/.cursor/mcp.json`
 
-2. Configure:
+4. Configure:
 
     - **Recommended (AI assisted config!):** start your client and ask `init aranet4` to get a guided configuration.
     - **Alternative (manual):** edit file `config.yaml`. You need to provide the mac address and the device name. You can get the mac address with `aranetctl --scan` from [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) (installed with this repo dependencies).
+
+## Automatic data fetch job
+
+If you want your local db to always be updated, you can setup a cronjob or a launch agent that fetches data automatically every few hours. In MacOS, do as follows:
+
+1. Configure absolute paths in `com.diegobit.aranet4-fetch.plist`.
+2. Install LaunchAgent:
+   ```bash
+   cp com.diegobit.aranet4-fetch.plist ~/Library/LaunchAgents/
+   launchctl load ~/Library/LaunchAgents/com.diegobit.aranet4-fetch.plist
+   ```
 
