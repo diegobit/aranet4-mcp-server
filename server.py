@@ -3,9 +3,10 @@ import os
 from datetime import datetime
 import json
 
+from PIL import Image as PILImage
 import yaml
 import aranet4
-from mcp.server.fastmcp import FastMCP
+from mcp.server.fastmcp import FastMCP, Image
 
 from aranet import Aranet4DB
 
@@ -200,9 +201,12 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_plot: bo
         data = aranet4_db.get_recent_data(limit, sensors, format=format)
         if not data:
             return "No data found"
-        if not isinstance(data, str):
+        elif not isinstance(data, str):
             return "Data has wrong format"
-        return data
+        elif output_as_plot == "plot":
+            return Image(data)
+        else:
+            return data
     except Exception as e:
         return f"Error retrieving data: {str(e)}"
 
@@ -241,9 +245,13 @@ async def get_data_by_timerange(
         data = aranet4_db.get_data_by_timerange(start_datetime, end_datetime, sensors, limit, format=format)
         if not data:
             return f"No data found between {start_datetime} and {end_datetime}"
-        if not isinstance(data, str):
+        elif not isinstance(data, str):
             return "Data has wrong format"
-        return data
+        elif output_as_plot == "plot":
+            return Image(data)
+        else:
+            return data
+
     except ValueError as e:
         return f"Invalid datetime format: {str(e)}. Please use ISO format (YYYY-MM-DDTHH:MM:SS)"
     except Exception as e:

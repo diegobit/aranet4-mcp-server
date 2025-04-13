@@ -436,12 +436,7 @@ class Aranet4DB:
             plt.savefig(filepath, format='png', dpi=100)
             plt.close(fig)
 
-            if format == "plot_base64":
-                import base64
-                with open(filepath, "rb") as img_file:
-                    return base64.b64encode(img_file.read()).decode('utf-8')
-            else:  # Default to returning the file path
-                return filepath
+            return filepath
         except Exception as e:
             return f"Error generating plot: {str(e)}"
 
