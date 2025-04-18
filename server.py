@@ -29,6 +29,10 @@ async def init_aranet4_config() -> str:
     Initialize the Aranet4 MCP Server configuration. This tool helps setup the db_path,
     device_name, device_mac and use_local_tz settings.
 
+    Example questions:
+    - "init aranet4"
+    - "Help me configure my aranet4 co2 sensor"
+
     Returns descriptive information that guides the user through the configuration process.
     """
     return """
@@ -57,6 +61,12 @@ async def init_aranet4_config() -> str:
 async def scan_devices() -> str:
     """
     Scan for nearby Aranet4 devices and return their information.
+
+    Example questions:
+    - "Scan for nearby aranet4 devices"
+    - "Are there co2 sensors around me now?"
+
+    Returns the scan results.
     """
     try:
         # Collection of discovered devices to avoid duplicates
@@ -106,6 +116,11 @@ async def get_configuration() -> str:
     """
     Get current config.
 
+    Example questions:
+    - "Get my aranet4 config"
+    - "What's the path of the aranet4 database?"
+    - "I need the mac address of aranet4"
+
     Returns:
         str: current configuration object.
     """
@@ -119,6 +134,10 @@ async def get_configuration() -> str:
 async def set_configuration(db_path=None, device_name=None, device_mac=None, use_local_tz=None) -> str:
     """
     Change configuration of database or currently tracked device.
+
+    Example questions:
+    - "Change configured aranet4 db_path"
+    - "Set device mac of my aranet4"
 
     Args:
         db_path: path to db where to store past measurements.
@@ -165,6 +184,10 @@ async def get_database_stats() -> str:
     - Total number of measurements
     - Time range (first to last measurement dates)
 
+    Example questions:
+    - "How many total measurements there are in the aranet4 db?"
+    - "How many devices there are in the aranet4 database?"
+
     Returns:
         A markdown-formatted summary of database statistics
     """
@@ -176,6 +199,10 @@ async def fetch_new_data() -> str:
     """
     Fetch the data stored in the embedded Aranet4 device memory, store in the local database, and return it (markdown formatted).
 
+    Example questions:
+    - "Get data from aranet4 device and save to local db."
+    - "Update local database with new aranet4 data."
+
     Args:
         num_retries: Number of retry attempts if fetching fails. Default = 3
     """
@@ -185,7 +212,12 @@ async def fetch_new_data() -> str:
 @mcp.tool()
 async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot: bool = False) -> str | Image:
     """
-    Get most recent sensor data from the Aranet4 local database. Defaults to return data in markdown format; set output_as_plot=true if the user asks for a plot (or an image).
+    Get most recent measurements of the configured 'aranet4 co2 sensor' from the local database. Defaults to returning data in markdown format; set output_as_plot=true if the user asks for a plot (or an image).
+
+    Example questions:
+    - "What's the co2 recently?"
+    - "Show me the last 50 readings of co2 and temperature."
+    - "Give me a plot for last 100 measurements."
 
     Args:
         limit: number of measurements to get (default: 20)
@@ -222,9 +254,15 @@ async def get_data_by_timerange(
     output_as_plot: bool = False
 ) -> str | Image:
     """
-    Get sensor data within a specific time range.
+    Get measuremens within a specifig datetime range of the configured 'aranet4 co2 sensor' from the local database.
     - If the range is wide and there are too many measurements, these are dropped until below limit. Use a bigger limit if the timerange is big.
     - Defaults to returning data in markdown format; Set output_as_plot = "true" if the user asks for a plot (or an image).
+
+    Example questions:
+    - "Was the aranet4 co2 level good, last sunday around noon?"
+    - "Get yesterday readings from my aranet4."
+    - "Give me temperature and humidity yesterday morning."
+    - "Show me with a plot the co2 from 2025-05-08 to 2025-05-12"
 
     Args:
         start_datetime: Start datetime in ISO format (YYYY-MM-DDTHH:MM:SS)

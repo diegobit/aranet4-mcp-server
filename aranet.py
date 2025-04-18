@@ -397,19 +397,12 @@ class Aranet4Manager:
         """
         try:
             column_names, rows = column_data
-
-            # Convert rows to DataFrame for easier manipulation
             df = pd.DataFrame(rows, columns=column_names)
-
-            # Convert timestamp column to datetime
             df['timestamp'] = pd.to_datetime(df['timestamp'], unit='s', utc=True)
-
-            # Convert to local timezone
             df['timestamp'] = df['timestamp'].dt.tz_convert(self.local_timezone)
 
             # Determine which sensors are in the data (excluding timestamp)
             selected_sensors = [col for col in column_names if col in self.sensor_plot_config and col != 'timestamp']
-
             if not selected_sensors:
                 return "Error: No valid sensors found in the data"
 
