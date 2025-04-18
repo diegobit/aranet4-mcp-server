@@ -22,10 +22,10 @@ class Aranet4Manager:
 
     def __init__(self, device_name, device_mac, db_path, use_local_tz):
         self.sensor_plot_config = {
-            "temperature": {"color": "red", "unit": "°C"},
-            "humidity": {"color": "blue", "unit": "%"},
-            "pressure": {"color": "green", "unit": "hPa"},
-            "CO2": {"color": "purple", "unit": "ppm"},
+            "temperature": {"color": "red",    "unit": "°C" },
+            "humidity":    {"color": "blue",   "unit": "%"  },
+            "pressure":    {"color": "green",  "unit": "hPa"},
+            "CO2":         {"color": "purple", "unit": "ppm"},
         }
         self.device_name = device_name
         self.device_mac = device_mac
@@ -89,9 +89,17 @@ class Aranet4Manager:
 
         return "\n".join(result)
 
-    def get_valid_sensors(self):
+    def list_sensors(self):
         """Return a list of valid sensor types."""
         return list(self.sensor_plot_config.keys())
+
+    def validate_sensors(self, sensors: str) -> tuple[str, bool]:
+        """Return the cleaned string of sensors and a boolean saying if they are all valid."""
+        cleaned = [s.strip().lower().replace('co2', 'CO2') for s in sensors.split(",")]
+        exists_invalid = any(True for s in cleaned if s not in self.list_sensors())
+        if sensors != "all" and exists_invalid:
+            return ", ".join(cleaned), False
+        return ", ".join(cleaned), True
 
     def get_database_stats(self) -> str:
         """
@@ -259,7 +267,6 @@ class Aranet4Manager:
             f"# Fetched data\n"
             f"{self._format_data_as_markdown(column_data, timestamp_idx=1)}\n"
         )
-
 
     def get_recent_data(self, limit=20, sensors="all", format="markdown") -> (str | tuple | None):
         """

@@ -224,10 +224,10 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)
     """
-    valid_sensors = aranet4_db.get_valid_sensors()
-
-    if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
-        return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
+    sensors, all_valid = aranet4_db.validate_sensors(sensors)
+    if not all_valid:
+        valid_sensor_names = aranet4_db.list_sensors()
+        return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensor_names)} or 'all'"
 
     try:
         format = "plot" if output_as_plot else "markdown"
@@ -271,7 +271,7 @@ async def get_data_by_timerange(
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
         output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)
     """
-    valid_sensors = aranet4_db.get_valid_sensors()
+    valid_sensors = aranet4_db.list_sensors()
 
     if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
         return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
