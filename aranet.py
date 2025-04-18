@@ -101,7 +101,7 @@ class Aranet4Manager:
             return ", ".join(cleaned), False
         return ", ".join(cleaned), True
 
-    def get_database_stats(self) -> str:
+    def get_database_stats(self) -> dict:
         """
         Get statistics about the Aranet4 database, including:
         - List of devices
@@ -109,7 +109,7 @@ class Aranet4Manager:
         - Time range (first to last measurement dates)
 
         Returns:
-            A markdown-formatted summary of database statistics
+            A dict containing the database statistics
         """
         try:
             with sqlite3.connect(self.db_path) as con:
@@ -149,23 +149,14 @@ class Aranet4Manager:
                 first_str = "N/A"
                 last_str = "N/A"
 
-            # Build markdown output
-            result = [
-                "## Aranet4 Database Statistics",
-                "",
-                f"**Total Measurements**: {count}",
-                "",
-                f"**Time Range**: {first_str} to {last_str}",
-                "",
-                "**Devices**:"
-            ]
-
-            for device, device_count in device_counts.items():
-                result.append(f"- {device}: {device_count} measurements")
-
-            return "\n".join(result)
+            return {
+                "total_measurements": count,
+                "beginning_date": first_str,
+                "most_recent_date": last_str,
+                "devices": device_counts
+            }
         except Exception as e:
-            return f"Error retrieving database statistics: {str(e)}"
+            return {"error": f"Error retrieving database statistics: {str(e)}"}
 
     def get_last_timestamp(self, device_name: str) -> (datetime | None):
         """Get the timestamp of the last recorded measurement for a specific device."""

@@ -112,21 +112,37 @@ async def scan_devices() -> str:
 
 
 @mcp.tool()
-async def get_configuration() -> str:
+async def get_configuration_and_db_stats() -> str:
     """
-    Get current config.
+    Get current config and get statistics about the Aranet4 sqlite database.
+
+    Configurations:
+    - device_name
+    - device_mac
+    - db_path
+    - use_local_tz
+
+    Database stats:
+    - List of devices
+    - Total number of measurements
+    - Total time range (first to last measurement dates)
 
     Example questions:
     - "Get my aranet4 config"
     - "What's the path of the aranet4 database?"
     - "I need the mac address of aranet4"
+    - "How many total measurements there are in the aranet4 db?"
+    - "How many devices there are in the aranet4 database?"
 
     Returns:
-        str: current configuration object.
+        str: A markdown-formatted summary with the current configuration object and database statistics
     """
     return (
-        "Current config:\n"
-        f"{json.dumps(config, indent=4)}"
+        "# Aranet4 current config:\n"
+        f"{json.dumps(config, indent=4)}\n"
+        "\n"
+        "# Aranet4 database statistics:\n"
+        f"{json.dumps(aranet4_db.get_database_stats(), indent=4)}"
     )
 
 
@@ -174,24 +190,6 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
         "# New config:\n"
         f"{json.dumps(config, indent=4)}"
     )
-
-
-@mcp.tool()
-async def get_database_stats() -> str:
-    """
-    Get statistics about the Aranet4 sqlite database, including:
-    - List of devices
-    - Total number of measurements
-    - Time range (first to last measurement dates)
-
-    Example questions:
-    - "How many total measurements there are in the aranet4 db?"
-    - "How many devices there are in the aranet4 database?"
-
-    Returns:
-        A markdown-formatted summary of database statistics
-    """
-    return aranet4_db.get_database_stats()
 
 
 @mcp.tool()
