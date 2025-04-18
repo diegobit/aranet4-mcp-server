@@ -39,7 +39,7 @@ async def init_aranet4_config() -> str:
     To initialize the Aranet4 MCP Server configuration, please follow these steps:
 
     1. First, scan for nearby devices using the `scan_devices` tool.
-    2. Check your current configuration with `get_configuration` (with no arguments).
+    2. Check your current configuration with `get_configuration_and_db_stats` (with no arguments).
     3. Update the configuration with `set_configuration` tool by setting the new values. Always prompt the user before setting values.
     4. Suggest to the user what he/her might do after the configuration (just report the examples below):
         a. "Fetch new data from my aranet4" (This will update the local db with the data stored in the device).
