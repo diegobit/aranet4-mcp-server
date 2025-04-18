@@ -322,7 +322,7 @@ class Aranet4Manager:
             print(f"Database error: {str(e)}")
             return None
 
-    def get_data_by_timerange(self, start_time, end_time, sensors="all", limit=100, format="markdown") -> (str | tuple | None):
+    def get_data_by_timerange(self, start_time, end_time, sensors="all", limit=1460, format="markdown") -> (str | tuple | None):
         """
         Retrieve data from the database within a specific time range. Gets textual output as default.
         Pass format=plot to get the data plotted as an image.
@@ -469,7 +469,6 @@ if __name__ == "__main__":
         use_local_tz=True
     )
 
-    import asyncio
     print(asyncio.run(aranet4_db.fetch_new_data()))
 
     print(aranet4_db.get_recent_data(format="plot"))
