@@ -255,6 +255,7 @@ async def get_data_by_timerange(
 ) -> str | Image:
     """
     Get measuremens within a specifig datetime range of the configured 'aranet4 co2 sensor' from the local database.
+    - Always use this when the user asks about specific dates and time ranges.
     - If the range is wide and there are too many measurements, these are dropped until below limit. Use a bigger limit if the timerange is big.
     - Defaults to returning data in markdown format; Set output_as_plot = "true" if the user asks for a plot (or an image).
 
@@ -262,7 +263,8 @@ async def get_data_by_timerange(
     - "Was the aranet4 co2 level good, last sunday around noon?"
     - "Get yesterday readings from my aranet4."
     - "Give me temperature and humidity yesterday morning."
-    - "Show me with a plot the co2 from 2025-05-08 to 2025-05-12"
+    - "Show me with a plot the co2 from 2025-05-08 to 2025-05-12."
+    - "plot this month of data from aranet4."
 
     Args:
         start_datetime: Start datetime in ISO format (YYYY-MM-DDTHH:MM:SS)
