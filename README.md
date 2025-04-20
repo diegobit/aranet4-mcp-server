@@ -52,7 +52,7 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
 
 ## Dockerfile
 
-Dockerfile is available. Remember to pass env variables. Check `config.yaml`.
+Dockerfile is available. Remember to pass env variables or update `config.yaml`.
 
 ## List of tools
 
