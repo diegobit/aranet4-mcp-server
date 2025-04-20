@@ -37,7 +37,14 @@ class Aranet4Manager:
         return getattr(self, '_use_local_tz', None)
 
     @use_local_tz.setter
-    def use_local_tz(self, value: bool):
+    def use_local_tz(self, value: str|bool):
+        if isinstance(value, str):
+            value = value.strip().lower()
+            if value == 'true':
+                value = True
+            else:
+                value = False
+
         self._use_local_tz = value
         self.local_timezone = "UTC"
         if value is True:
