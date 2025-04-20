@@ -14,7 +14,7 @@ mcp = FastMCP("aranet4")
 with open("config.yaml", "r") as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
 
-aranet4_db = Aranet4Manager(
+aranet4manager = Aranet4Manager(
     device_name=config["device_name"],
     device_mac=config["device_mac"],
     db_path=os.path.expanduser(config["db_path"]),
@@ -141,7 +141,7 @@ async def get_configuration_and_db_stats() -> str:
         f"{json.dumps(config, indent=4)}\n"
         "\n"
         "# Aranet4 database statistics:\n"
-        f"{json.dumps(aranet4_db.get_database_stats(), indent=4)}"
+        f"{json.dumps(aranet4manager.get_database_stats(), indent=4)}"
     )
 
 
@@ -203,7 +203,7 @@ async def fetch_new_data() -> str:
     Args:
         num_retries: Number of retry attempts if fetching fails. Default = 3
     """
-    return await aranet4_db.fetch_new_data()
+    return await aranet4manager.fetch_new_data()
 
 
 @mcp.tool()
@@ -221,14 +221,14 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)
     """
-    sensors, all_valid = aranet4_db.validate_sensors(sensors)
+    sensors, all_valid = aranet4manager.validate_sensors(sensors)
     if not all_valid:
-        valid_sensor_names = aranet4_db.list_sensors()
+        valid_sensor_names = aranet4manager.list_sensors()
         return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensor_names)} or 'all'"
 
     try:
         format = "plot" if output_as_plot else "markdown"
-        data = aranet4_db.get_recent_data(limit, sensors, format)
+        data = aranet4manager.get_recent_data(limit, sensors, format)
         if not data:
             return "No data found"
         elif not isinstance(data, str):
@@ -270,13 +270,13 @@ async def get_data_by_timerange(
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
         output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)
     """
-    valid_sensors = aranet4_db.list_sensors()
+    valid_sensors = aranet4manager.list_sensors()
 
     if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
         return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
 
     try:
-        data = aranet4_db.get_data_by_timerange(
+        data = aranet4manager.get_data_by_timerange(
             start_datetime,
             end_datetime,
             sensors,
