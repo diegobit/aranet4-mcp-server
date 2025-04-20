@@ -9,10 +9,22 @@ from mcp.server.fastmcp import FastMCP, Image
 
 from aranet import Aranet4Manager
 
+# -------------------
+# Initialization code
+# -------------------
 mcp = FastMCP("aranet4")
 
+# Set up config and override with env vars (for smithery); init Aranet4Manager
 with open("config.yaml", "r") as f:
     config = yaml.load(f, Loader=yaml.SafeLoader)
+if os.environ.get("DEVICE_NAME", None):
+    config['device_name'] = os.environ['DEVICE_NAME']
+if os.environ.get("DEVICE_MAC", None):
+    config['device_mac'] = os.environ['DEVICE_MAC']
+if os.environ.get("DB_PATH", None):
+    config['db_path'] = os.environ['DB_PATH']
+if os.environ.get("USE_LOCAL_TZ", None):
+    config['use_local_tz'] = os.environ['USE_LOCAL_TZ']
 
 aranet4manager = Aranet4Manager(
     device_name=config["device_name"],
@@ -21,6 +33,9 @@ aranet4manager = Aranet4Manager(
     use_local_tz=config["use_local_tz"]
 )
 
+# -------------------
+# Tools
+# -------------------
 
 @mcp.tool()
 async def init_aranet4_config() -> str:
