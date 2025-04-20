@@ -1,9 +1,9 @@
+import logging
 import os
 import sqlite3
 import uuid
 from datetime import datetime, timezone
 from zoneinfo import ZoneInfo
-import logging
 
 import aranet4
 import matplotlib.pyplot as plt

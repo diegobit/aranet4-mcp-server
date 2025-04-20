@@ -9,7 +9,6 @@ from mcp.server.fastmcp import FastMCP, Image
 
 from aranet import Aranet4Manager
 
-
 mcp = FastMCP("aranet4")
 
 with open("config.yaml", "r") as f:
