@@ -50,6 +50,10 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
     - **Recommended (AI assisted config!):** start your client and ask `init aranet4` to get a guided configuration.
     - **Alternative (manual):** edit file `config.yaml`. You need to provide the mac address and the device name. You can get the mac address with `aranetctl --scan` from [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python) (installed with this repo dependencies).
 
+## Dockerfile
+
+Dockerfile is available. Remember to pass env variables. Check `config.yaml`.
+
 ## List of tools
 
 **Configuration and utils**:
