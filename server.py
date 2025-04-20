@@ -173,12 +173,16 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
 
     if db_path is not None:
         config['db_path'] = db_path
+        aranet4manager.db_path = db_path
     if device_name is not None:
         config['device_name'] = device_name
+        aranet4manager.device_name = device_name
     if device_mac is not None:
         config['device_mac'] = device_mac
+        aranet4manager.device_mac = device_mac
     if use_local_tz is not None:
         config['use_local_tz'] = use_local_tz
+        aranet4manager.use_local_tz = use_local_tz
 
     with open("config.yaml", 'w') as f:
         yaml.dump(config, f, default_flow_style=False)

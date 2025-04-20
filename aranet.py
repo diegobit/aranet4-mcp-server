@@ -29,22 +29,33 @@ class Aranet4Manager:
         }
         self.device_name = device_name
         self.device_mac = device_mac
-        self.db_path = db_path
         self.use_local_tz = use_local_tz
+        self.db_path = db_path
 
+    @property
+    def use_local_tz(self):
+        return getattr(self, '_use_local_tz', None)
+
+    @use_local_tz.setter
+    def use_local_tz(self, value: bool):
+        self._use_local_tz = value
         self.local_timezone = "UTC"
-        if self.use_local_tz:
+        if value is True:
             try:
                 self.local_timezone = tzlocal.get_localzone_name()
             except Exception:
                 pass
 
-        self._init_database()
+    @property
+    def db_path(self):
+        return getattr(self, '_db_path', '')
 
-    def _init_database(self):
-        """Initialize the database if it doesn't exist."""
-        with sqlite3.connect(self.db_path) as con:
+    @db_path.setter
+    def db_path(self, value: str):
+        self._db_path = value
+        with sqlite3.connect(value) as con:
             cur = con.cursor()
+            # Use IF NOT EXISTS to be idempotent
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS measurements(
                     device TEXT,
