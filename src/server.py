@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 from datetime import datetime
+from contextlib import asynccontextmanager
 
 import aranet4
 import yaml
@@ -10,28 +11,33 @@ from mcp.server.fastmcp import FastMCP, Image
 from aranet import Aranet4Manager
 
 # -------------------
-# Initialization code
+# Init
 # -------------------
-mcp = FastMCP("aranet4")
 
-# Set up config and override with env vars (for smithery); init Aranet4Manager
-with open("config.yaml", "r") as f:
-    config = yaml.load(f, Loader=yaml.SafeLoader)
-if os.environ.get("DEVICE_NAME", None):
-    config['device_name'] = os.environ['DEVICE_NAME']
-if os.environ.get("DEVICE_MAC", None):
-    config['device_mac'] = os.environ['DEVICE_MAC']
-if os.environ.get("DB_PATH", None):
-    config['db_path'] = os.environ['DB_PATH']
-if os.environ.get("USE_LOCAL_TZ", None):
-    config['use_local_tz'] = os.environ['USE_LOCAL_TZ']
+def _load_cfg(path="config.yaml") -> dict:
+    if os.path.exists(path):
+        with open(path) as f:
+            cfg = yaml.safe_load(f) or {}
+    else:
+        cfg = {}
+    # override with env vars (for smithery)
+    cfg.update({
+        "device_name":  os.getenv("DEVICE_NAME", cfg.get("device_name")),
+        "device_mac":   os.getenv("DEVICE_MAC",  cfg.get("device_mac")),
+        "db_path":      os.path.expanduser(os.getenv("DB_PATH", cfg.get("db_path", "aranet4.db"))),
+        "use_local_tz": os.getenv("USE_LOCAL_TZ", str(cfg.get("use_local_tz", True))).lower() == "true",
+    })
+    return cfg
 
-aranet4manager = Aranet4Manager(
-    device_name=config["device_name"],
-    device_mac=config["device_mac"],
-    db_path=os.path.expanduser(config["db_path"]),
-    use_local_tz=config["use_local_tz"]
-)
+@asynccontextmanager
+async def _lifespan(app):
+    cfg = _load_cfg()
+    aranet4manager = Aranet4Manager(**cfg)
+    app.cfg = cfg
+    app.aranet4manager = aranet4manager
+    yield
+
+mcp = FastMCP("aranet4", lifespan=_lifespan)
 
 # -------------------
 # Tools
@@ -153,10 +159,10 @@ async def get_configuration_and_db_stats() -> str:
     """
     return (
         "# Aranet4 current config:\n"
-        f"{json.dumps(config, indent=4)}\n"
+        f"{json.dumps(mcp.cfg, indent=4)}\n"
         "\n"
         "# Aranet4 database statistics:\n"
-        f"{json.dumps(aranet4manager.get_database_stats(), indent=4)}"
+        f"{json.dumps(mcp.aranet4manager.get_database_stats(), indent=4)}"
     )
 
 
@@ -180,6 +186,9 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
     """
     if db_path is None and device_name is None and device_mac is None and use_local_tz is None:
         return "Need to provide at least one argument."
+
+    config = mcp.cfg
+    aranet4manager = mcp.aranet4manager
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs("config_bk", exist_ok=True)
@@ -223,7 +232,7 @@ async def fetch_new_data() -> str:
     Args:
         num_retries: Number of retry attempts if fetching fails. Default = 3
     """
-    return await aranet4manager.fetch_new_data()
+    return await mcp.aranet4manager.fetch_new_data()
 
 
 @mcp.tool()
@@ -241,6 +250,8 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)
     """
+    aranet4manager = mcp.aranet4manager
+
     sensors, all_valid = aranet4manager.validate_sensors(sensors)
     if not all_valid:
         valid_sensor_names = aranet4manager.list_sensors()
@@ -290,6 +301,7 @@ async def get_data_by_timerange(
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
         output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)
     """
+    aranet4manager = mcp.aranet4manager
     valid_sensors = aranet4manager.list_sensors()
 
     if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
