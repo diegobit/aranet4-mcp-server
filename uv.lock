@@ -38,7 +38,7 @@ sdist = { url = "https://files.pythonhosted.org/packages/01/c0/a2d5f032de3b25e99
 [[package]]
 name = "aranet4-mcp-server"
 version = "0.1.0"
-source = { editable = "." }
+source = { virtual = "." }
 dependencies = [
     { name = "aranet4" },
     { name = "matplotlib" },
