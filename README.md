@@ -37,7 +37,7 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
           "--directory",
           "{{PATH_TO_SRC}}/aranet4-mcp-server/",
           "run",
-          "server.py"
+          "src/server.py"
         ]
     }
     ```
@@ -55,9 +55,8 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
 **Configuration and utils**:
 - `init_aranet4_config`: assisted configuration of device.
 - `scan_devices`: scan nearby bluetooth aranet4 devices.
-- `get_configuration`: get current config.yaml.
+- `get_configuration_and_db_stats`: get current config.yaml and general stats from the local sqlite3 db.
 - `set_configuration`: set values in config.yaml.
-- `get_database_stats`: get general stats from the local sqlite3 db.
 
 **To update historical data**:
 - `fetch_new_data`: fetch new data from configured nearby aranet4 device and save to local db.
