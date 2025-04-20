@@ -1,7 +1,7 @@
 import os
 import asyncio
 import yaml
-from aranet import Aranet4Manager
+from src.aranet import Aranet4Manager
 
 if __name__ == "__main__":
     with open("config.yaml", "r") as f:
