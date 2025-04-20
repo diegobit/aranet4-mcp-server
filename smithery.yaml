@@ -1,0 +1,29 @@
+---
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      db_path:
+        type: string
+        default: "/aranet4.db"
+      device_name:
+        type: string
+        default: "aranet4"
+      device_mac:
+        type: string
+        pattern: "^[0-9A-Fa-f]{2}(:[0-9A-Fa-f]{2}){5}$"
+      use_local_tz:
+        type: boolean
+        default: false
+  commandFunction: |-
+    (cfg) => ({
+      command: "python",
+      args: ["src/server.py"],
+      env: {
+        DB_PATH:      cfg.db_path,
+        DEVICE_NAME:  cfg.device_name,
+        DEVICE_MAC:   cfg.device_mac,
+        USE_LOCAL_TZ: cfg.use_local_tz ? "true" : "false"
+      }
+    })
