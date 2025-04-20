@@ -258,14 +258,17 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
         return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensor_names)} or 'all'"
 
     try:
-        format = "plot" if output_as_plot else "markdown"
-        data = aranet4manager.get_recent_data(limit, sensors, format)
+        data = aranet4manager.get_recent_data(
+            limit=limit,
+            sensors=sensors,
+            format="plot" if output_as_plot else "markdown"
+        )
         if not data:
             return "No data found"
         elif not isinstance(data, str):
             return "Data has wrong format"
-        elif output_as_plot == "plot":
-            return Image(data)
+        elif output_as_plot is True:
+            return Image(path=data)
         else:
             return data
 
@@ -309,17 +312,17 @@ async def get_data_by_timerange(
 
     try:
         data = aranet4manager.get_data_by_timerange(
-            start_datetime,
-            end_datetime,
-            sensors,
-            limit,
-            format = "plot" if output_as_plot else "markdown"
+            start_time=start_datetime,
+            end_time=end_datetime,
+            sensors=sensors,
+            limit=limit,
+            format="plot" if output_as_plot else "markdown"
         )
         if not data:
             return f"No data found between {start_datetime} and {end_datetime}"
         elif not isinstance(data, str):
             return "Data has wrong format"
-        elif output_as_plot == "plot":
+        elif output_as_plot is True:
             return Image(data)
         else:
             return data
