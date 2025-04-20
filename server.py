@@ -87,7 +87,7 @@ async def scan_devices() -> str:
         await scanner.stop()
 
         if not discovered_devices:
-            return "No Aranet4 devices found nearby."
+            return "No Aranet4 devices found nearby. Is your Aranet4 closeby? Maybe you should enable extended bluetooth range?"
 
         # Format results
         result = []
