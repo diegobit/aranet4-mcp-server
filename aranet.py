@@ -460,6 +460,7 @@ if __name__ == "__main__":
         use_local_tz=True
     )
 
+    import asyncio
     print(asyncio.run(aranet4_db.fetch_new_data()))
 
     print(aranet4_db.get_recent_data(format="plot"))
