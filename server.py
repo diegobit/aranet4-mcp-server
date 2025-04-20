@@ -167,7 +167,8 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
         return "Need to provide at least one argument."
 
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    backup_filename = f"config_{timestamp}.yaml"
+    os.makedirs("config_bk", exist_ok=True)
+    backup_filename = f"config_bk/config_{timestamp}.yaml"
     with open(backup_filename, 'w') as f:
         yaml.dump(config, f, default_flow_style=False)
 
