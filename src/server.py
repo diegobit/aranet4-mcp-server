@@ -3,6 +3,7 @@ import json
 import os
 from datetime import datetime
 from contextlib import asynccontextmanager
+import inspect
 
 import aranet4
 import yaml
@@ -45,17 +46,15 @@ mcp = FastMCP("aranet4", lifespan=_lifespan)
 
 @mcp.tool()
 async def init_aranet4_config() -> str:
-    """
-    Initialize the Aranet4 MCP Server configuration. This tool helps setup the db_path,
+    """Initialize the Aranet4 MCP Server configuration. This tool helps setup the db_path,
     device_name, device_mac and use_local_tz settings.
 
     Example questions:
     - "init aranet4"
     - "Help me configure my aranet4 co2 sensor"
 
-    Returns descriptive information that guides the user through the configuration process.
-    """
-    return """
+    Returns descriptive information that guides the user through the configuration process."""
+    return inspect.cleandoc("""
     To initialize the Aranet4 MCP Server configuration, please follow these steps:
 
     1. First, scan for nearby devices using the `scan_devices` tool.
@@ -74,20 +73,18 @@ async def init_aranet4_config() -> str:
     - use_local_tz: whether to use local timezone when plotting
 
     Use `scan_devices` now to begin the process.
-    """
+    """)
 
 
 @mcp.tool()
 async def scan_devices() -> str:
-    """
-    Scan for nearby Aranet4 devices and return their information.
+    """Scan for nearby Aranet4 devices and return their information.
 
     Example questions:
     - "Scan for nearby aranet4 devices"
     - "Are there co2 sensors around me now?"
 
-    Returns the scan results.
-    """
+    Returns the scan results."""
     try:
         # Collection of discovered devices to avoid duplicates
         discovered_devices = {}
@@ -133,8 +130,7 @@ async def scan_devices() -> str:
 
 @mcp.tool()
 async def get_configuration_and_db_stats() -> str:
-    """
-    Get current config and get statistics about the Aranet4 sqlite database.
+    """Get current config and get statistics about the Aranet4 sqlite database.
 
     Configurations:
     - device_name
@@ -155,8 +151,7 @@ async def get_configuration_and_db_stats() -> str:
     - "How many devices there are in the aranet4 database?"
 
     Returns:
-        str: A markdown-formatted summary with the current configuration object and database statistics
-    """
+        str: A markdown-formatted summary with the current configuration object and database statistics"""
     return (
         "# Aranet4 current config:\n"
         f"{json.dumps(mcp.cfg, indent=4)}\n"
@@ -168,8 +163,7 @@ async def get_configuration_and_db_stats() -> str:
 
 @mcp.tool()
 async def set_configuration(db_path=None, device_name=None, device_mac=None, use_local_tz=None) -> str:
-    """
-    Change configuration of database or currently tracked device.
+    """Change configuration of database or currently tracked device.
 
     Example questions:
     - "Change configured aranet4 db_path"
@@ -182,8 +176,7 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
         use_local_tz: if to use local timezone when plotting.
 
     Returns:
-        str: new configuration object.
-    """
+        str: new configuration object."""
     if db_path is None and device_name is None and device_mac is None and use_local_tz is None:
         return "Need to provide at least one argument."
 
@@ -222,23 +215,20 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
 
 @mcp.tool()
 async def fetch_new_data() -> str:
-    """
-    Fetch the data stored in the embedded Aranet4 device memory, store in the local database, and return it (markdown formatted).
+    """Fetch the data stored in the embedded Aranet4 device memory, store in the local database, and return it (markdown formatted).
 
     Example questions:
     - "Get data from aranet4 device and save to local db."
     - "Update local database with new aranet4 data."
 
     Args:
-        num_retries: Number of retry attempts if fetching fails. Default = 3
-    """
+        num_retries: Number of retry attempts if fetching fails. Default = 3"""
     return await mcp.aranet4manager.fetch_new_data()
 
 
 @mcp.tool()
 async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot: bool = False) -> str | Image:
-    """
-    Get most recent measurements of the configured 'aranet4 co2 sensor' from the local database. Defaults to returning data in markdown format; set output_as_plot=true if the user asks for a plot (or an image).
+    """Get most recent measurements of the configured 'aranet4 co2 sensor' from the local database. Defaults to returning data in markdown format; set output_as_plot=true if the user asks for a plot (or an image).
 
     Example questions:
     - "What's the co2 recently?"
@@ -248,8 +238,7 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
     Args:
         limit: number of measurements to get (default: 20)
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
-        output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)
-    """
+        output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)"""
     aranet4manager = mcp.aranet4manager
 
     sensors, all_valid = aranet4manager.validate_sensors(sensors)
@@ -284,8 +273,7 @@ async def get_data_by_timerange(
     limit: int = 100,
     output_as_plot: bool = False
 ) -> str | Image:
-    """
-    Get measuremens within a specifig datetime range of the configured 'aranet4 co2 sensor' from the local database.
+    """Get measuremens within a specifig datetime range of the configured 'aranet4 co2 sensor' from the local database.
     - Always use this when the user asks about specific dates and time ranges.
     - If the range is wide and there are too many measurements, these are dropped until below limit. Use a bigger limit if the timerange is big.
     - Defaults to returning data in markdown format; Set output_as_plot = "true" if the user asks for a plot (or an image).
@@ -302,8 +290,7 @@ async def get_data_by_timerange(
         end_datetime: End datetime in ISO format (YYYY-MM-DDTHH:MM:SS)
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
-        output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)
-    """
+        output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)"""
     aranet4manager = mcp.aranet4manager
     valid_sensors = aranet4manager.list_sensors()
 
