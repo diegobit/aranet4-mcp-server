@@ -111,13 +111,6 @@ class Aranet4Manager:
         """Return a list of valid sensor types."""
         return list(self.sensor_plot_config.keys())
 
-    def validate_sensors(self, sensors: str) -> tuple[str, bool]:
-        """Return the cleaned string of sensors and a boolean saying if they are all valid."""
-        cleaned = [s.strip().lower().replace('co2', 'CO2') for s in sensors.split(",")]
-        exists_invalid = any(True for s in cleaned if s not in self.list_sensors())
-        if sensors != "all" and exists_invalid:
-            return ", ".join(cleaned), False
-        return ", ".join(cleaned), True
     async def scan_devices(self) -> dict:
         discovered_devices = {}
 

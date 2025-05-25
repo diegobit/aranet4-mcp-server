@@ -224,10 +224,10 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
         output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)"""
     aranet4manager = mcp.aranet4manager
 
-    sensors, all_valid = aranet4manager.validate_sensors(sensors)
-    if not all_valid:
-        valid_sensor_names = aranet4manager.list_sensors()
-        return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensor_names)} or 'all'"
+    try:
+        sensors = validate_sensors(sensors)
+    except ValueError as e:
+        return str(e)
 
     try:
         data = aranet4manager.get_recent_data(
@@ -275,10 +275,10 @@ async def get_data_by_timerange(
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
         output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)"""
     aranet4manager = mcp.aranet4manager
-    valid_sensors = aranet4manager.list_sensors()
-
-    if sensors != "all" and any(True for s in sensors.split(",") if s not in valid_sensors):
-        return f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_sensors)} or 'all'"
+    try:
+        sensors = validate_sensors(sensors)
+    except ValueError as e:
+        return str(e)
 
     try:
         data = aranet4manager.get_data_by_timerange(
@@ -301,6 +301,14 @@ async def get_data_by_timerange(
         return f"Invalid datetime format: {str(e)}. Please use ISO format (YYYY-MM-DDTHH:MM:SS)"
     except Exception as e:
         return f"Error retrieving data: {str(e)}"
+
+
+def validate_sensors(sensors: str) -> str:
+    """Return the cleaned string of sensors and a boolean saying if they are all valid."""
+    cleaned = [s.strip().lower().replace('co2', 'CO2') for s in sensors.split(",")]
+    if sensors != "all" and any(True for s in cleaned if s not in mcp.aranet.list_sensors()):
+        raise ValueError(f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(sensors)} or 'all'")
+    return ", ".join(cleaned)
 
 
 if __name__ == "__main__":
