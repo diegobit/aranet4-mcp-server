@@ -227,7 +227,7 @@ class Aranet4Manager:
         for attempt in range(num_retries):
             entry_filter["end"] = datetime.now(timezone.utc).astimezone(ZoneInfo(self.local_timezone))
             try:
-                history = await aranet4.client._all_records(self.device_mac, entry_filter, False)
+                history = await aranet4.client._all_records(self.device_mac, entry_filter, False)  # type: ignore[attr-defined]
                 break
             except Exception as e:
                 if verbose:
