@@ -37,7 +37,7 @@ async def _lifespan(app):
     # Create manager
     aranet4manager = Aranet4Manager(**cfg)
     app.cfg = cfg
-    app.aranet4manager = aranet4manager
+    app.aranet = aranet4manager
     yield
 
 mcp = Aranet4FastMCP("aranet4", lifespan=_lifespan)
