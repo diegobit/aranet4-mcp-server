@@ -118,6 +118,23 @@ class Aranet4Manager:
         if sensors != "all" and exists_invalid:
             return ", ".join(cleaned), False
         return ", ".join(cleaned), True
+    async def scan_devices(self) -> dict:
+        discovered_devices = {}
+
+        def on_device_found(advertisement):
+            if advertisement.device.address not in discovered_devices:
+                discovered_devices[advertisement.device.address] = advertisement
+            else:
+                # Update with newer data if available
+                if advertisement.readings:
+                    discovered_devices[advertisement.device.address] = advertisement
+
+        scanner = aranet4.Aranet4Scanner(on_device_found)
+        await scanner.start()
+        await asyncio.sleep(5)  # Scan for 5 seconds
+        await scanner.stop()
+
+        return discovered_devices
 
     def get_database_stats(self) -> dict:
         """

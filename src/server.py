@@ -5,7 +5,6 @@ from datetime import datetime
 from contextlib import asynccontextmanager
 import inspect
 
-import aranet4
 import yaml
 from mcp.server.fastmcp import FastMCP, Image
 
@@ -86,23 +85,7 @@ async def scan_devices() -> str:
 
     Returns the scan results."""
     try:
-        # Collection of discovered devices to avoid duplicates
-        discovered_devices = {}
-
-        # Callback function to process scan results
-        def on_device_found(advertisement):
-            if advertisement.device.address not in discovered_devices:
-                discovered_devices[advertisement.device.address] = advertisement
-            else:
-                # Update with newer data if available
-                if advertisement.readings:
-                    discovered_devices[advertisement.device.address] = advertisement
-
-        # Run the scanner with our callback
-        scanner = aranet4.Aranet4Scanner(on_device_found)
-        await scanner.start()
-        await asyncio.sleep(5)  # Scan for 5 seconds
-        await scanner.stop()
+        discovered_devices = await mcp.aranet.scan_devices()
 
         if not discovered_devices:
             return "No Aranet4 devices found nearby. Is your Aranet4 closeby? Maybe you should enable extended bluetooth range?"
