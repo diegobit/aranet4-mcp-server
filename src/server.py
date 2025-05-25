@@ -1,9 +1,8 @@
-import asyncio
+import inspect
 import json
 import os
-from datetime import datetime
 from contextlib import asynccontextmanager
-import inspect
+from datetime import datetime
 
 import yaml
 from mcp.server.fastmcp import FastMCP, Image
@@ -14,7 +13,15 @@ from aranet import Aranet4Manager
 # Init
 # -------------------
 
-def _load_cfg(path="config.yaml") -> dict:
+# Class that advertises the extra attributes, for static type checking
+class Aranet4FastMCP(FastMCP):
+    aranet: Aranet4Manager
+    cfg: dict
+
+@asynccontextmanager
+async def _lifespan(app):
+    # Load config
+    path="config.yaml"
     if os.path.exists(path):
         with open(path) as f:
             cfg = yaml.safe_load(f) or {}
@@ -27,17 +34,13 @@ def _load_cfg(path="config.yaml") -> dict:
         "db_path":      os.path.expanduser(os.getenv("DB_PATH", cfg.get("db_path", "aranet4.db"))),
         "use_local_tz": os.getenv("USE_LOCAL_TZ", str(cfg.get("use_local_tz", True))).lower() == "true",
     })
-    return cfg
-
-@asynccontextmanager
-async def _lifespan(app):
-    cfg = _load_cfg()
+    # Create manager
     aranet4manager = Aranet4Manager(**cfg)
     app.cfg = cfg
     app.aranet4manager = aranet4manager
     yield
 
-mcp = FastMCP("aranet4", lifespan=_lifespan)
+mcp = Aranet4FastMCP("aranet4", lifespan=_lifespan)
 
 # -------------------
 # Tools
@@ -140,7 +143,7 @@ async def get_configuration_and_db_stats() -> str:
         f"{json.dumps(mcp.cfg, indent=4)}\n"
         "\n"
         "# Aranet4 database statistics:\n"
-        f"{json.dumps(mcp.aranet4manager.get_database_stats(), indent=4)}"
+        f"{json.dumps(mcp.aranet.get_database_stats(), indent=4)}"
     )
 
 
@@ -163,36 +166,33 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
     if db_path is None and device_name is None and device_mac is None and use_local_tz is None:
         return "Need to provide at least one argument."
 
-    config = mcp.cfg
-    aranet4manager = mcp.aranet4manager
-
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     os.makedirs("config_bk", exist_ok=True)
     backup_filename = f"config_bk/config_{timestamp}.yaml"
     with open(backup_filename, 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
+        yaml.dump(mcp.cfg, f, default_flow_style=False)
 
     if db_path is not None:
-        config['db_path'] = db_path
-        aranet4manager.db_path = db_path
+        mcp.cfg['db_path'] = db_path
+        mcp.aranet.db_path = db_path
     if device_name is not None:
-        config['device_name'] = device_name
-        aranet4manager.device_name = device_name
+        mcp.cfg['device_name'] = device_name
+        mcp.aranet.device_name = device_name
     if device_mac is not None:
-        config['device_mac'] = device_mac
-        aranet4manager.device_mac = device_mac
+        mcp.cfg['device_mac'] = device_mac
+        mcp.aranet.device_mac = device_mac
     if use_local_tz is not None:
-        config['use_local_tz'] = use_local_tz
-        aranet4manager.use_local_tz = use_local_tz
+        mcp.cfg['use_local_tz'] = use_local_tz
+        mcp.aranet.use_local_tz = use_local_tz
 
-    with open("config.yaml", 'w') as f:
-        yaml.dump(config, f, default_flow_style=False)
+    with open("mcp.cfg.yaml", 'w') as f:
+        yaml.dump(mcp.cfg, f, default_flow_style=False)
 
     return (
         "Config Updated successfully.\n"
         "\n"
         "# New config:\n"
-        f"{json.dumps(config, indent=4)}"
+        f"{json.dumps(mcp.cfg, indent=4)}"
     )
 
 
@@ -206,7 +206,7 @@ async def fetch_new_data() -> str:
 
     Args:
         num_retries: Number of retry attempts if fetching fails. Default = 3"""
-    return await mcp.aranet4manager.fetch_new_data()
+    return await mcp.aranet.fetch_new_data()
 
 
 @mcp.tool()
@@ -222,15 +222,13 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
         limit: number of measurements to get (default: 20)
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)"""
-    aranet4manager = mcp.aranet4manager
-
     try:
         sensors = validate_sensors(sensors)
     except ValueError as e:
         return str(e)
 
     try:
-        data = aranet4manager.get_recent_data(
+        data = mcp.aranet.get_recent_data(
             limit=limit,
             sensors=sensors,
             format="plot" if output_as_plot else "markdown"
@@ -274,14 +272,13 @@ async def get_data_by_timerange(
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
         output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)"""
-    aranet4manager = mcp.aranet4manager
     try:
         sensors = validate_sensors(sensors)
     except ValueError as e:
         return str(e)
 
     try:
-        data = aranet4manager.get_data_by_timerange(
+        data = mcp.aranet.get_data_by_timerange(
             start_time=start_datetime,
             end_time=end_datetime,
             sensors=sensors,
