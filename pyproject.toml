@@ -1,6 +1,6 @@
 [project]
 name = "aranet4-mcp-server"
-version = "0.1.0"
+version = "0.2.0"
 description = "Simple MCP server to manage your aranet4 device and local db."
 readme = "README.md"
 requires-python = ">=3.12"
