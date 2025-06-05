@@ -185,7 +185,7 @@ async def set_configuration(db_path=None, device_name=None, device_mac=None, use
         mcp.cfg['use_local_tz'] = use_local_tz
         mcp.aranet.use_local_tz = use_local_tz
 
-    with open("mcp.cfg.yaml", 'w') as f:
+    with open("config.yaml", 'w') as f:
         yaml.dump(mcp.cfg, f, default_flow_style=False)
 
     return (
