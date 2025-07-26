@@ -18,6 +18,12 @@ logging.basicConfig(
 )
 
 
+class InvalidDateFormat(Exception):
+    pass
+
+class InvalidSensorType(Exception):
+    pass
+
 class Aranet4Manager:
     """Handler for Aranet4 device operations."""
 
@@ -108,9 +114,16 @@ class Aranet4Manager:
 
         return "\n".join(result)
 
-    def list_sensors(self):
-        """Return a list of valid sensor types."""
-        return list(self.sensor_plot_config.keys())
+    def sanitize_sensors(self, sensors: str) -> list[str]:
+        """Return the cleaned string of sensors and a boolean saying if they are all valid."""
+        valid_options = self.sensor_plot_config.keys()
+
+        cleaned = [s.strip().lower().replace('co2', 'CO2') for s in sensors.split(",")]
+
+        at_least_one_unknown = any(True for s in cleaned if s not in valid_options)
+        if sensors != "all" and at_least_one_unknown:
+            raise InvalidSensorType(f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(valid_options)} or 'all'")
+        return cleaned
 
     async def scan_devices(self) -> dict:
         discovered_devices = {}
@@ -306,10 +319,11 @@ class Aranet4Manager:
             end_time = datetime.now(timezone.utc)
 
             # Determine columns to select
+            sensor_list = self.sanitize_sensors(sensors)
             if sensors == "all":
                 columns = "timestamp, temperature, humidity, pressure, CO2"
             else:
-                columns = f"timestamp, {sensors}"
+                columns = f"timestamp, {','.join(sensor_list)}"
 
             # Connect and query
             with sqlite3.connect(self.db_path) as con:
@@ -338,6 +352,8 @@ class Aranet4Manager:
             else:
                 return column_data
 
+        except InvalidSensorType as e:
+            raise e
         except Exception as e:
             print(f"Database error: {str(e)}")
             return None
@@ -358,10 +374,13 @@ class Aranet4Manager:
             str if format="markdown" or format="plot"; tuple of (column_names, rows) if format="column_data"
         """
         try:
-            if isinstance(start_time, str):
-                start_time = datetime.fromisoformat(start_time)
-            if isinstance(end_time, str):
-                end_time = datetime.fromisoformat(end_time)
+            try:
+                if isinstance(start_time, str):
+                    start_time = datetime.fromisoformat(start_time)
+                if isinstance(end_time, str):
+                    end_time = datetime.fromisoformat(end_time)
+            except ValueError as e:
+                raise InvalidDateFormat(f"{str(e)}. Please use ISO format (YYYY-MM-DDTHH:MM:SS)")
 
             # Convert datetimes to UTC for querying
             if start_time.tzinfo is None:
@@ -372,11 +391,12 @@ class Aranet4Manager:
             start_time_utc = start_time.astimezone(timezone.utc)
             end_time_utc = end_time.astimezone(timezone.utc)
 
-            # Determine columns to fetch
+            # Determine columns to select
+            sensor_list = self.sanitize_sensors(sensors)
             if sensors == "all":
                 columns = "timestamp, temperature, humidity, pressure, CO2"
             else:
-                columns = f"timestamp, {sensors}"
+                columns = f"timestamp, {','.join(sensor_list)}"
 
             # Connect and query
             with sqlite3.connect(self.db_path) as con:
@@ -408,6 +428,10 @@ class Aranet4Manager:
             else:
                 return column_data
 
+        except InvalidDateFormat as e:
+            raise e
+        except InvalidSensorType as e:
+            raise e
         except Exception as e:
             print(f"Database error: {str(e)}")
             return None

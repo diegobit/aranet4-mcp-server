@@ -223,11 +223,6 @@ async def get_recent_data(limit: int = 20, sensors: str = "all", output_as_plot:
         sensors: comma-separated sensors to retrieve (valid options: temperature, humidity, pressure, CO2), or "all"
         output_as_plot: whether to get data as a an image of the plot (true) or markdown text description (false)"""
     try:
-        sensors = _validate_sensors(sensors)
-    except ValueError as e:
-        return str(e)
-
-    try:
         data = mcp.aranet.get_recent_data(
             limit=limit,
             sensors=sensors,
@@ -273,11 +268,6 @@ async def get_data_by_timerange(
         limit: limit number of results. If there are more results than limit, one every two elements are dropped until below the threshold.
         output_plot: whether to get data as an image of the plot (true) or markdown text descrption (false)"""
     try:
-        sensors = _validate_sensors(sensors)
-    except ValueError as e:
-        return str(e)
-
-    try:
         data = mcp.aranet.get_data_by_timerange(
             start_time=start_datetime,
             end_time=end_datetime,
@@ -294,18 +284,8 @@ async def get_data_by_timerange(
         else:
             return data
 
-    except ValueError as e:
-        return f"Invalid datetime format: {str(e)}. Please use ISO format (YYYY-MM-DDTHH:MM:SS)"
     except Exception as e:
         return f"Error retrieving data: {str(e)}"
-
-
-def _validate_sensors(sensors: str) -> str:
-    """Return the cleaned string of sensors and a boolean saying if they are all valid."""
-    cleaned = [s.strip().lower().replace('co2', 'CO2') for s in sensors.split(",")]
-    if sensors != "all" and any(True for s in cleaned if s not in mcp.aranet.list_sensors()):
-        raise ValueError(f"Invalid sensor type in '{sensors}'. Valid options are: {', '.join(sensors)} or 'all'")
-    return ", ".join(cleaned)
 
 
 if __name__ == "__main__":
