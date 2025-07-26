@@ -1,6 +1,5 @@
-[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/diegobit-aranet4-mcp-server-badge.png)](https://mseep.ai/app/diegobit-aranet4-mcp-server)
-
 # aranet4-mcp-server
+[![Verified on MseeP](https://mseep.ai/badge.svg)](https://mseep.ai/app/3beee758-1666-4c1f-a702-bf278a1874b1)
 
 MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https://github.com/Anrijs/Aranet4-Python).
 
