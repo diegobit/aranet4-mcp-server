@@ -5,7 +5,7 @@ from src.aranet import Aranet4Manager
 
 if __name__ == "__main__":
     with open("config.yaml", "r") as f:
-        config = yaml.load(f, Loader=yaml.SafeLoader)
+        config = yaml.safe_load(f)
 
     aranet4_db = Aranet4Manager(
         device_name=config["device_name"],
