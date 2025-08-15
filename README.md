@@ -15,6 +15,10 @@ MCP server to manage your Aranet4 CO2 sensor. Built upon [Aranet4-Python](https:
 - *[For MCP clients that support images]* Ask data to be plotted to also have a nice visualization!
 - **Assisted configuration!** 💫 After installation, just ask `init aranet4` in your client to set up everything for the mcp server to work with your device.
 
+## Requirements
+
+An Aranet4 device already paired. The device uses BLE, so it won't be shown in regular bluetooth search. On MacOS, one way is to install LightBlue from the App Store.
+
 ## Installation
 
 1. Clone repo:
